@@ -38,7 +38,10 @@ x=apply_rhapsodie(x0, A, d, μ)
 
 where:
 
--'x0" is the initialization, 
--'A' the convolution by the PSF, 
--'d' the dataset uncluding data and weights,
--'μ' a vector of regularization hyperparameters.
+-`x0` is the initialization,
+
+-`A` the convolution by the PSF,
+
+-`d` the dataset uncluding data and weights,
+
+-`μ` a vector of regularization hyperparameters.
