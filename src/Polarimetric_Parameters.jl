@@ -5,7 +5,7 @@
 #
 # ------------------------------------------------
 #
-# This file is part of RHAPSODIE
+# This file is part of Rhapsodie
 #
 #
 # Copyright (c) 2017-2021 Laurence Denneulin
@@ -65,7 +65,7 @@ create an object of type PolarimetricParameter from either:
 Each parameter can be called from the structur. For exemple with a 
 construction from Stokes parameters S=(I,Q,U):
 
-    using RHAPSODIE
+    using Rhapsodie
     X = PolarimetricParameter(S, 'stokes');
     X.I #yields the Stokes parameter I
     X.Ip #yields the polarized intensity Ip

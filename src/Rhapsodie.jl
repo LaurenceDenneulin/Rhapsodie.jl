@@ -1,8 +1,8 @@
 #
-# RHAPSODIE.jl
+# Rhapsodie.jl
 #
 # Package for the Reconstruction of High-contrAst Polarized
-# SOurces and Deconvolution for cIrcumstellar Environments (RHAPSODIE)
+# SOurces and Deconvolution for cIrcumstellar Environments (Rhapsodie)
 #
 #----------------------------------------------------------
 #
@@ -10,7 +10,7 @@
 # Copiyright (c) 2017-2021 Laurence Denneulin
 #
 
-module RHAPSODIE
+module Rhapsodie
 
     export
         PolarimetricPixel,
