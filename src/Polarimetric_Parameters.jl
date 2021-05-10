@@ -224,12 +224,23 @@ yields an empty
     
     Base.size(A::PolarimetricMap) = size(A.I)
     Base.length(A::PolarimetricMap) =prod(size(A))*3
+    Base.length(A::PolarimetricPixel) =3
     Base.getindex(X::PolarimetricMap, i::CartesianIndex{2}) where {N} =
     PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
     Base.getindex(X::PolarimetricMap, i::Int) = 
     PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
     Base.getindex(X::PolarimetricMap, i::Int, j::Int) where {T<:Tuple} = 
     getindex(X, CartesianIndex(i,j))
+
+    function Base.setindex!(X::PolarimetricMap{Float64}, x::PolarimetricPixel{Float64}, i::Int64, j::Int64)
+        X.I[i,j]=x.I;
+        X.Q[i,j]=x.Q;
+        X.U[i,j]=x.U;
+        X.Iu[i,j]=x.Iu;
+        X.Ip[i,j]=x.Ip;
+        X.θ[i,j]=x.θ;
+    end
+        
 
     +(x::PolarimetricMap, y::PolarimetricMap) = PolarimetricMap(x.parameter_type,
                                                                 x.I + y.I, 
