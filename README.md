@@ -2,7 +2,9 @@
 **RHAPSODIE** (Reconstruction of High-contrAst Polarized SOurces and Deconvolution for cIrcumstellar Environments)
 
 
-## INSTALATION
+## Installation
+
+In the package manager:
 
 ```julia
 pkg> add https://github.com/LaurenceDenneulin/Rhapsodie.jl
