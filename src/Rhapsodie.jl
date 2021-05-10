@@ -38,7 +38,7 @@ module Rhapsodie
     import Base: +, -, *, /, ==, getindex, setindex!, read, write, convert
 
     using OptimPackNextGen
-    import OptimPackNextGen: Bradi #va devenir BraDi avec un D majuscule
+    import OptimPackNextGen: BraDi #va devenir BraDi avec un D majuscule
     using SpecialFunctions
     using TwoDimensional
     using FFTW
