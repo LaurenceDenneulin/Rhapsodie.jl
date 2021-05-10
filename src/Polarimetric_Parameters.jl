@@ -42,7 +42,7 @@
                     U::AbstractArray{T,2},
                     Iu::AbstractArray{T,2},
                     Ip::AbstractArray{T,2},
-                    θ::AbstractArray{T,2}) where {T<:AbstractFloat} =  PolarimetricMap(parameter_type,        
+                    θ::AbstractArray{T,2}) where {T<:AbstractFloat} =       PolarimetricMap(parameter_type,        
                                                          convert(Array{T},I),
                                                          convert(Array{T},Q),
                                                          convert(Array{T},U),
@@ -216,7 +216,7 @@ yields an empty
                                Array{Float64,2}(undef, n1, n2),
                                Array{Float64,2}(undef, n1, n2),
                                Array{Float64,2}(undef, n1, n2),
-                               Array{Float64,2}(undef, n1, n2)
+                               Array{Float64,2}(undef, n1, n2))
     end
     
 #------------------------------------------------
