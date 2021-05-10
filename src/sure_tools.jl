@@ -1,19 +1,32 @@
-module sure_tools
+#
+# sure_tools.jl
+#
+# Provides an implementation of the Generalized Stein 
+# Umbiased Risk Estimator (GSURE) and of the prevision error.
+#
+# [Stein, 1981] Stein, C. M. (1981). Estimation of the mean of a  
+# multivariate normal distribution. The annals of Statistics, 
+# pages 1135–1151.
+#
+# [Eldar, 2008] Eldar, Y. C. (2008). Generalized sure for
+# exponential families : Applications to regularization. 
+# IEEE Transactions on Signal Processing, 57(2) :471–481.
+#
+# [Ramani et al., 2008] Ramani, S., Blu, T., and Unser, M. (2008). 
+# Monte-Carlo Sure : A Black-Box Optimization of Regularization 
+# Parameters for General Denoising Algorithms. IEEE Trans.
+# on Image Process., 17(9) :1540–1554.
+#
+#
+#------------------------------------------------------
+#
+# This file is part of Rhapsodie
+#
+# Copyright (c) 2017-2021 Laurence DENNEULIN (see Licence.md)
+#
 
-export MSE_data, sure_crit, SURE, do_data_perturbation
+#------------------------------------------------
 
-using LinoaProx
-using OptimPackNextGen
-using TiPi
-using LinearAlgebra
-using LazyAlgebra
-using Statistics
-import OptimPackNextGen.QuasiNewton
-import OptimPackNextGen.Powell.Newuoa
-using grad_tools
-import grad_tools.data_table
-using algorithms
-using prox
 
 function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::Array{data_table,1}) where {T <: AbstractFloat,N}
     MSE=0.0;
@@ -115,7 +128,4 @@ end
 function sure_optim(solver, x)#; linear=true)
         res=sure_tools.SURE(solver, x, grad_tools.dataset, data_perturbed, X0nl)[1]
     return res[1] + 2*res[2];
-end
-
-
 end

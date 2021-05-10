@@ -1,3 +1,18 @@
+#
+# grad_tools.jl
+#
+# Provide tools to load the instrumental parameters and the 
+# calibrated data, and for the calculus of the RHAPSODIE data fidelity term. 
+#
+# ------------------------------------------------
+#
+# This file is part of Rhapsodie
+#
+#
+# Copyright (c) 2017-2021 Laurence Denneulin (see LICENCE.md)
+#
+
+#------------------------------------------------
 
 const ImageInterpolator{T<:AbstractFloat, K<:Kernel{T}} = TwoDimensionalTransformInterpolator{T,K,K}
 const MyKer = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)

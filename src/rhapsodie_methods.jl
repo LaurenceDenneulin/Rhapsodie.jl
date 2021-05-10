@@ -1,3 +1,31 @@
+#
+# grad_tools.jl
+#
+# Provide the RHAPSODIE methods to reconstruct the polarimetric 
+# parameters from a dataset using:
+#
+# - VMLM-B (when "mixed" polarimetric parameters are used)
+# [Thiébaut, 2002] Thiébaut, E. (2002). Optimization issues in 
+# blind deconvolution algorithms. In Astronomical Data Analysis II,
+# volume 4847, pages 174–183. International Society for Optics and Photonics.
+#
+# - Forward-Backward with backtracking (when "stokes" parameters are used)
+# [Beck and Teboulle, 2009] Beck, A. and Teboulle, M. (2009). 
+# A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems. 
+# SIAM J. Imaging Sci., 2(1) :183–202. (TODO: clean implementation)
+#
+#
+# ------------------------------------------------
+#
+# This file is part of Rhapsodie
+#
+#
+# Copyright (c) 2017-2021 Laurence Denneulin (see LICENCE.md)
+#
+
+#------------------------------------------------
+
+
 function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_table,1}, μ::Array{Tuple{H,T},1}) where {T <: AbstractFloat, H<:AbstractCost, D <:Mapping}
 
     n1, n2, n3 = size(g)

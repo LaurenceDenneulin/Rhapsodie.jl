@@ -8,7 +8,7 @@
 # This file is part of Rhapsodie
 #
 #
-# Copyright (c) 2017-2021 Laurence Denneulin
+# Copyright (c) 2017-2021 Laurence Denneulin (see LICENCE.md)
 
 
 #------------------------------------------------

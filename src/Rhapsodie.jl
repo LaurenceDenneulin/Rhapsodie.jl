@@ -7,7 +7,7 @@
 #----------------------------------------------------------
 #
 # 
-# Copiyright (c) 2017-2021 Laurence Denneulin
+# Copiyright (c) 2017-2021 Laurence Denneulin (see LICENCE.md)
 #
 
 module Rhapsodie

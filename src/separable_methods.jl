@@ -1,22 +1,30 @@
 #
 # separable_methods.jl
 #
-# Provides the state-of-the-art methods Double Ratio and Double Difference 
-# and separable inverse approach.
+# Provides the state-of-the-art methods Double Ratio 
+# and Double Difference and separable inverse approach.
 #
 # State of the arts methods have been implemented from:
-# [Tinbergen, 2005]  Tinbergen,  J.  (2005).Astronomical Polarimetry.    Cambridge  University
+# [Tinbergen, 2005]  Tinbergen,  J.  (2005).Astronomical Polarimetry. 
+# Cambridge  University
 #
 # Inverse approch :
-# [Denneulin, 2020] Approche inverse pour la reconstruction des environnements circumstellaires en polarimétrie avec l’instrument d’imagerie directe ESO/VLT SPHERE IRDIS.. Instrumentation et méthodes pour l'astrophysique [astro-ph.IM]. Université Claude Bernard Lyon 1 (UCBL), 2020. Français. ⟨tel-03200282⟩
-# thèse:
+# [Denneulin, 2020] Approche inverse pour la reconstruction 
+# des environnements circumstellaires en polarimétrie 
+# avec l’instrument d’imagerie directe ESO/VLT SPHERE IRDIS.. 
+# Instrumentation et méthodes pour l'astrophysique [astro-ph.IM]. 
+# Université Claude Bernard Lyon 1 (UCBL), 2020. Français. ⟨tel-03200282⟩
+#
 #
 #------------------------------------------------------
 #
 # This file is part of Rhapsodie
 #
-# Copyright (c) 2017-2021 Laurence DENNEULIN
+# Copyright (c) 2017-2021 Laurence DENNEULIN (see Licence.md)
 #TODO : Add a way to return the CRLB
+
+
+#------------------------------------------------
 
 """
     Double_Difference(d,ind) -> X
