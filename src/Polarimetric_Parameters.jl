@@ -72,6 +72,9 @@ construction from Stokes parameters S=(I,Q,U):
     X[1,1] #yields a PolarimetricPix at the CartesianIndex (1,1);
     X[1,1].I #yields the Stokes parameter I at the CartesianIndex (1,1); 
 
+    PolarimetricMap(parameter_type, n1, n2) -> PolarimetricMap
+    
+yields an empty    
 """    
     function PolarimetricPixel(parameter_type::AbstractString, 
                              x1::T, 
@@ -206,6 +209,16 @@ construction from Stokes parameters S=(I,Q,U):
                         view(x,:,:,3));
     end
     
+    function PolarimetricMap(parameter_type::AbstractString, n1::Int, n2::Int)
+        return PolarimetricMap(x.parameter_type,
+                               Array{Float64,2}(undef, n1, n2),
+                               Array{Float64,2}(undef, n1, n2),
+                               Array{Float64,2}(undef, n1, n2),
+                               Array{Float64,2}(undef, n1, n2),
+                               Array{Float64,2}(undef, n1, n2),
+                               Array{Float64,2}(undef, n1, n2)
+    end
+    
 #------------------------------------------------
 # Base fonction redefinitions
     
@@ -247,14 +260,8 @@ construction from Stokes parameters S=(I,Q,U):
         @assert (x.parameter_type == "stokes") | 
                 (x.parameter_type == "intensities") | 
                 (x.parameter_type == "mixed")
-
-         return PolarimetricMap(x.parameter_type,
-                                Array{Float64,2}(undef,size(x)),
-                                Array{Float64,2}(undef,size(x)),
-                                Array{Float64,2}(undef,size(x)),
-                                Array{Float64,2}(undef,size(x)),
-                                Array{Float64,2}(undef,size(x)),
-                                Array{Float64,2}(undef,size(x)))
+         n1,n2=size(x);
+         return PolarimetricMap(x.parameter_type, n1, n2)
      end     
                                         
      function +(x::PolarimetricMap, y::Array{T,3}) where {T<:AbstractFloat} 
