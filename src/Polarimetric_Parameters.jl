@@ -210,7 +210,7 @@ yields an empty
     end
     
     function PolarimetricMap(parameter_type::AbstractString, n1::Int, n2::Int)
-        return PolarimetricMap(x.parameter_type,
+        return PolarimetricMap(parameter_type,
                                Array{Float64,2}(undef, n1, n2),
                                Array{Float64,2}(undef, n1, n2),
                                Array{Float64,2}(undef, n1, n2),
