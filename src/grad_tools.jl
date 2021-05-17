@@ -443,7 +443,7 @@ function FieldTransformOperator(cols::NTuple{3,Int64},
                                 v_r::NTuple{3,T},
                                 T_l::TwoDimensionalTransformInterpolator{T},
                                 T_r::TwoDimensionalTransformInterpolator{T},
-                                A::Mapping) where {T <: AbstractFloat}
+                                A::M) where {T <: AbstractFloat, M <: Mapping}
     FieldTransformOperator(cols, rows, v_l, v_r, T_l*A, T_r*A)
 end
 
