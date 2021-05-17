@@ -181,8 +181,8 @@ yields an empty
         elseif parameter_type == "mixed" 
             I = Array{T}(undef, n1, n2)     # Stokes parameter I (total light intensity
             Q = x2            # Stokes parameter Q
-            U = x1            # Stokes parameter U
-            Iu = x3          # intensity of unpolarized light     
+            U = x3            # Stokes parameter U
+            Iu = x1          # intensity of unpolarized light     
             Ip = Array{T}(undef, n1, n2)    # intensity of linearly polarized light
             θ = Array{T}(undef, n1, n2) # angle of linearly polarized light
             @inbounds for i2 in 1:n2

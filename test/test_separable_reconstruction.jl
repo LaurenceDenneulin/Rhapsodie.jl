@@ -29,7 +29,7 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 # Loading the pre-processed data (i.e. bad pixels have been interpolated	
     Load_Data("test_results/DATA_$tau-$DSIZE.fits", 
                          "test_results/WEIGHT_$tau-$DSIZE.fits")
-	Sdim=length(dataset)
+	Sdim=length(Rhapsodie.dataset)
     
     DATA=zeros(get_par().cols[1], get_par().cols[2], Sdim,2);
     WEIGHT=zeros(get_par().cols[1], get_par().cols[2], Sdim,2);
@@ -43,10 +43,10 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
         T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Trans_Table[i][1]))
         T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Trans_Table[i][2]))
     
-        I1=T1*dataset[i].data[:,1:end÷2]
-        I2=T2*dataset[i].data[:,end÷2+1:end]
-        W1=T1*dataset[i].weights[:,1:end÷2]
-        W2=T2*dataset[i].weights[:,end÷2+1:end]
+        I1=T1*Rhapsodie.dataset[i].data[:,1:end÷2]
+        I2=T2*Rhapsodie.dataset[i].data[:,end÷2+1:end]
+        W1=T1*Rhapsodie.dataset[i].weights[:,1:end÷2]
+        W2=T2*Rhapsodie.dataset[i].weights[:,end÷2+1:end]
 
         DATA[:,:,i,1]=I1;
         DATA[:,:,i,2]=I2;
