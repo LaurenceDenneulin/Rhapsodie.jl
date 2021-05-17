@@ -20,7 +20,7 @@ module Rhapsodie
         convert,
         load_parameters,
         get_par,
-        load_data,
+        Load_Data,
         fg!,
         set_fft_op,
         TwoDimensionalTransformInterpolator,
