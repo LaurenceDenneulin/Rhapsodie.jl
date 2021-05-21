@@ -1,5 +1,9 @@
 using Rhapsodie
-include("test_data_simulation.jl")
+using DelimitedFiles
+using EasyFITS
+using InterpolationKernels
+
+#include("test_data_simulation.jl")
 #-----------------------------------------------
 # Loading the dataset parameters
 par=readdlm("test_results/Parameters.txt")
@@ -40,8 +44,8 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 
 # Pre processing
     for i=1:Sdim
-        T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Trans_Table[i][1]))
-        T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Trans_Table[i][2]))
+        T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Rhapsodie.Trans_Table[i][1]))
+        T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Rhapsodie.Trans_Table[i][2]))
     
         I1=T1*Rhapsodie.dataset[i].data[:,1:end÷2]
         I2=T2*Rhapsodie.dataset[i].data[:,end÷2+1:end]
@@ -72,6 +76,6 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
     DD=Double_Difference(DATA);
     write(DD, "test_results/Results_Separable_DoubleDifference_$tau-$DSIZE.fits")
 		
-    empty!(dataset);
+    empty!(Rhapsodie.dataset);
 end
 
