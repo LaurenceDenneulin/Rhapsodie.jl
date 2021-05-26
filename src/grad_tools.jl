@@ -66,7 +66,7 @@ get_epsilon()::Float64=EPSILON_save[1];
 const PRECOND_SAVE= Vector{Any}();
 U()=PRECOND_SAVE[1];
 
-const MASK_save = Vector{Array{Float64,3}}();
+const MASK_save = Vector{Array{Float64,2}}();
 get_MASK()=MASK_save[1];
 
 function load_parameters(size_data::NTuple{3,Int64}, 

@@ -22,6 +22,8 @@ module Rhapsodie
         get_par,
         Load_Data,
         fg!,
+        crop,
+        crop!,
         set_fft_op,
         TwoDimensionalTransformInterpolator,
         FieldTransformOperator,
