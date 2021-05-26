@@ -39,6 +39,6 @@ regularisation_parameters = [0.5 , -1. , -1., -3.]; #(in log10)
 
 @time x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, 
                           maxeval=1000, maxiter=1000);
-
+crop!(x)
 write(x, "test_results/RHAPSODIE_nonlinearresults_$tau-$DSIZE.fits")  
 

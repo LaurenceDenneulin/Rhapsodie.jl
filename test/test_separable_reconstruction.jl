@@ -66,6 +66,7 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 
 # Linear Separable inverse method
     ML=Linear_Method(DATA, WEIGHT);
+    crop!(ML)
     write(ML, "test_results/Results_Separable_Linear_$tau-$DSIZE.fits")
 
 # Double Ratio    

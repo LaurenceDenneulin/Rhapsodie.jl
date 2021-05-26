@@ -595,13 +595,13 @@ end
       
 function SetCropOperator()
     DSIZE=get_par().rows[1]
-    MASK=ones(get_par().cols);
+    MASK=ones(get_par().cols[1:2]);
     for k=1:length(Trans_Table)
     X1=Trans_Table[k][1](1,1);
     X2=Trans_Table[k][1](1,DSIZE);
     X3=Trans_Table[k][1](DSIZE, DSIZE);
     X4=Trans_Table[k][1](DSIZE, 1);
-    Mask1=zeros(get_par().cols);
+    Mask1=zeros(get_par().cols[1:2]);
 
     for i=1:get_par().cols[1]
 	    for j=1:get_par().cols[2]	
@@ -614,7 +614,7 @@ function SetCropOperator()
     X2=Trans_Table[k][2](1,DSIZE);
     X3=Trans_Table[k][2](DSIZE, DSIZE);
     X4=Trans_Table[k][2](DSIZE, 1);
-    Mask2=zeros(get_par().cols);
+    Mask2=zeros(get_par().cols[1:2]);
 
     for i=1:get_par().cols[1]
 	    for j=1:get_par().cols[2]	
@@ -630,19 +630,51 @@ function SetCropOperator()
 end     
 
         
-function crop(X::AbstractArray{T,N}) where {T<:AbstractFloat, N}  
+function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     #@assert size(X) .==   get_par().cols
     Y=copy(X);
     Y[.!isfinite.(X)].=0    
     return Y .* get_MASK()        
 end        
 
-function crop!(X::AbstractArray{T,N})  where {T<:AbstractFloat, N}
+function crop!(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     #@assert size(X) .==   get_par().cols 
     X[.!isfinite.(X)].=0   
     X .*= get_MASK()        
 end        
         
+function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,3}}
+    #@assert size(X) .==   get_par().cols
+    Y=copy(X);
+    return crop!(Y)    
+end        
 
+function crop!(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,3}}
+    #@assert size(X) .==   get_par().cols
+    for k in size(X)[3] 
+        crop!(view(X,:,:,k))
+    end     
+end        
+   
+                
+function crop(X::PolarimetricMap{T}) where {T<:AbstractFloat}  
+    #@assert size(X) .==   get_par().cols
+    return PolarimetricMap(X.parameter_type,
+                           crop(view(X.Q,:,:)),
+                           crop(view(X.U,:,:)),
+                           crop(view(X.Iu,:,:)),
+                           crop(view(X.Ip,:,:)),        
+                           crop(view(X.θ,:,:)))   
+end        
+
+function crop!(X::PolarimetricMap{T})  where {T<:AbstractFloat}
+        crop!(view(X.I,:,:));
+        crop!(view(X.Q,:,:));
+        crop!(view(X.U,:,:));
+        crop!(view(X.Iu,:,:));
+        crop!(view(X.Ip,:,:));        
+        crop!(view(X.θ,:,:));
+end        
         
+
 
