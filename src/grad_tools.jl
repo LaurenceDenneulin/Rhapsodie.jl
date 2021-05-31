@@ -670,6 +670,7 @@ end
 function crop(X::PolarimetricMap{T}) where {T<:AbstractFloat}  
     #@assert size(X) .==   get_par().cols
     return PolarimetricMap(X.parameter_type,
+                           crop(view(X.I,:,:)),
                            crop(view(X.Q,:,:)),
                            crop(view(X.U,:,:)),
                            crop(view(X.Iu,:,:)),
