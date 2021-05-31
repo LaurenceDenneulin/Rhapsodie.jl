@@ -638,8 +638,8 @@ function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     xymax_2=findlast(get_MASK()' != 0.)
     
     xmin=min(xymin_1[1], xymin_2[2]);
-    ymin=min(xymin_1[2], xymin_2[1]);
-    xmax=max(xymax_1[1], xymax_2[2]);
+    xmax=min(xymin_1[2], xymin_2[1]);
+    ymin=max(xymax_1[1], xymax_2[2]);
     ymax=max(xymax_1[2], xymax_2[1]);
     
     Y=X[xmin:xmax, ymin:ymax];
