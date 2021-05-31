@@ -28,7 +28,7 @@ psf_center=readdlm("../data/PSF_centers_Airy.txt");
 load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, DerotAng)
 
 
-for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
+for tau in [0.03, 0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 #----------------------------------------------
 # Loading the pre-processed data (i.e. bad pixels have been interpolated	
     Load_Data("test_results/DATA_$tau-$DSIZE.fits", 
@@ -66,7 +66,7 @@ for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 
 # Linear Separable inverse method
     ML=Linear_Method(DATA, WEIGHT);
-    crop!(ML)
+    ML=crop(ML)
     write(ML, "test_results/Results_Separable_Linear_$tau-$DSIZE.fits")
 
 # Double Ratio    

@@ -632,9 +632,19 @@ end
         
 function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     #@assert size(X) .==   get_par().cols
-    Y=copy(X);
-    Y[.!isfinite.(X)].=0    
-    return Y .* get_MASK()        
+    xymin_1=findfirst(get_Mask() != 0.)
+    xymin_2=findfirst(get_Mask()' != 0.)
+    xymax_1=findlast(get_Mask() != 0.)
+    xymax_2=findlast(get_Mask()' != 0.)
+    
+    xmin=min(xymin_1[1], xymin_2[2]);
+    ymin=min(xymin_1[2], xymin_2[1]);
+    xmax=max(xymax_1[1], xymax_2[2]);
+    ymax=max(xymax_1[2], xymax_2[1]);
+    
+    Y=X[xmin:xmax, ymin:ymax];
+    Y[.!isfinite.(Y)].=0    
+    return Y     
 end        
 
 function crop!(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
