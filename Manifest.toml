@@ -329,7 +329,7 @@ version = "0.5.3+4"
 [[OptimPackNextGen]]
 deps = ["ArrayTools", "LazyAlgebra", "LinearAlgebra", "OptimPack_jll", "Printf"]
 git-tree-sha1 = "5d8888d2c16e314ae8f77152d1f2011fbae9a2b4"
-repo-rev = "master"
+repo-rev = "v0.1"
 repo-url = "https://github.com/emmt/OptimPackNextGen.jl"
 uuid = "080ffe24-4a27-4ab0-ad71-7b624e73ef8d"
 version = "0.1.0"
