@@ -54,13 +54,13 @@ module Rhapsodie
     using FITSIO
     using EasyFITS
     using DelimitedFiles
-    using TiPi
+    #using TiPi
     using Random
 
     include("Polarimetric_Parameters.jl")
     include("grad_tools.jl")
     include("separable_methods.jl")
-    include("rhapsodie_methods.jl")
+    #include("rhapsodie_methods.jl")
     include("datasimul_tools.jl")
 end
 
