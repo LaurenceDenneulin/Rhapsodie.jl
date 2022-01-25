@@ -81,7 +81,7 @@ function data_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
 	return D,W,S,CS
 end
 
-function data_simulator(Good_Pix, tau, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
+function data_simulator(Good_Pix, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
     @assert size(S) == get_par().cols[1:2];
    
     M=generate_model(S,A);

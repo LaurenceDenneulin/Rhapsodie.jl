@@ -115,6 +115,53 @@ function load_parameters(size_data::NTuple{3,Int64},
     end
 end
 
+function load_parameters(size_object::NTuple{2,Int64}, 
+                         size_data::NTuple{3,Int64}, 
+                         Nframe::Int64,
+                         Nrot::Int64, 
+                         Nangle::Int64, 
+                         center::Array{Float64,1}, 
+                         psf_center::NTuple{2,Array{Float64,1}},
+                         epsilon::Vector{NTuple{2,Array{Float64,1}}})
+    sets_indices=Indices(size_data[3],Nrot,Nframe)
+    sets_v=Set_Vi(sets_indices)
+    bbox_output=(0,0)
+    Id = AffineTransform2D{Float64}()
+    for k=1:size_data[3]
+        A_left=translate( epsilon[k][1][1], epsilon[k][1][2], Id)
+        A_right=translate( epsilon[k][2][1], epsilon[k][2][2], Id) 
+         
+        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
+        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
+               
+        xmax=max(bbox_output[1],out_left[1],out_right[1]);
+        ymax=max(bbox_output[2],out_left[2],out_right[2]);
+        
+        bbox_output =(xmax,ymax);  
+    end
+    bbox_output = max(bbox_output .+ 4, size_object);
+    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
+                                       (size_data[1], size_data[2]), 
+                                       size_data[3], 
+                                       Nframe, 
+                                       Nrot, 
+                                       Nangle, 
+                                       sets_v, 
+                                       sets_indices, 
+                                       center, 
+                                       psf_center,
+                                       epsilon, 
+                                       Float64[])); 
+    
+        newcenter= (bbox_output .+1)./2;
+        centerdiff=newcenter .- (center[1], center[2])
+        for k=1:size_data[3]
+        A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
+        A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
+        push!(Trans_Table, (A_left, A_right))
+    end
+end
+
 
 
 function load_parameters(size_data::NTuple{3,Int64}, 
@@ -142,6 +189,53 @@ function load_parameters(size_data::NTuple{3,Int64},
         bbox_output =(xmax,ymax);                               
     end
     bbox_output = bbox_output .+ 4;
+    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
+                                       (size_data[1], size_data[2]), 
+                                       size_data[3], 
+                                       Nframe, 
+                                       Nrot, 
+                                       Nangle, 
+                                       sets_v, 
+                                       sets_indices, 
+                                       center, 
+                                       psf_center,
+                                       epsilon, 
+                                       derotang)); 
+    
+    newcenter= (bbox_output .+1)./2
+    for k=1:size_data[3]
+        A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
+        A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
+        push!(Trans_Table, (A_left, A_right))
+    end
+end
+
+function load_parameters(size_object::NTuple{2,Int64},
+                         size_data::NTuple{3,Int64}, 
+                         Nframe::Int64,
+                         Nrot::Int64, 
+                         Nangle::Int64, 
+                         center::Array{Float64,1}, 
+                         psf_center::NTuple{2,Array{Float64,1}}, 
+                         epsilon::Vector{NTuple{2,Array{Float64,1}}}, 
+                         derotang::Vector{Float64})
+    sets_indices=Indices(size_data[3],Nrot,Nframe)
+    sets_v=Set_Vi(sets_indices)
+    bbox_output=(0,0)
+    Id = AffineTransform2D{Float64}()
+    for k=1:size_data[3]
+        A_left=TransRotate(Id, epsilon[k][1], derotang[k], center, center)
+        A_right=TransRotate(Id, epsilon[k][2], derotang[k], center, center)   
+        
+        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
+        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
+                
+        xmax=max(bbox_output[1],out_left[1],out_right[1]);
+        ymax=max(bbox_output[2],out_left[2],out_right[2]);
+        
+        bbox_output =(xmax,ymax);                               
+    end
+    bbox_output = max(bbox_output .+ 4, size_object);
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
