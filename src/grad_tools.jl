@@ -794,7 +794,7 @@ function pad(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     center_diff = X_size./2 .- get_par().center;
     ker = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)    
     Id = AffineTransform2D{Float64}()
-    center_change = translate(center_diff[1], center_diff[2], Id)   
+    center_change = translate(-center_diff[1],- center_diff[2], Id)   
     PAD=TwoDimensionalTransformInterpolator(get_par().cols[1:2], X_size, ker, ker, center_change)
     return PAD*X;
 end         
