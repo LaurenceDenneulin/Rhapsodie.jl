@@ -111,10 +111,10 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
 end
    
 
-function apply_edge_preserving_smoothing!(x::Array{T,2},
-                                   g::Array{T,2},
+function apply_edge_preserving_smoothing!(x::M,
+                                   g::M,
                                    λ::Real, 
-                                   ρ::Real) where {T <: AbstractFloat}
+                                   ρ::Real) where {T <: AbstractFloat, M<:AbstractArray{T,2}}
     m,n = size(x)                               
     f = zero(T);
     r = zero(T);
@@ -145,10 +145,10 @@ function apply_edge_preserving_smoothing!(x::Array{T,2},
     return f
 end
 
-function apply_edge_preserving_smoothing!(x::Array{T,3},
-                                   g::Array{T,2},
+function apply_edge_preserving_smoothing!(x::M,
+                                   g::M,
                                    λ::Real, 
-                                   ρ::Real) where {T <: AbstractFloat}
+                                   ρ::Real) where {T <: AbstractFloat, M<:AbstractArray{T,3}}
     m,n = size(x)                               
     f = zero(T);
     r = zero(T);
