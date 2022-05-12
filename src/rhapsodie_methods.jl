@@ -134,9 +134,9 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
             if r>0
                 ## Gradient in x ##
                 ∂r=2*√r;
-                g[i,j] .+= λ*(x1 + x2)/∂r;
-                g[i+1,j] .-= λ*x1/∂r; 
-                g[i,j+1] .-= λ*x2/∂r; 
+                g[i,j] += λ*(x1 + x2)/∂r;
+                g[i+1,j] -= λ*x1/∂r; 
+                g[i,j+1] -= λ*x2/∂r; 
                 
              end
         end
@@ -172,13 +172,13 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
             if r>0
                 ## Gradient in x ##
                 ∂r=2*√r;
-                g[i,j,1] .+= λ*(xQ1 + xQ2)/∂r;
-                g[i+1,j,1] .-= λ*xQ1/∂r; 
-                g[i,j+1,1] .-= λ*xQ2/∂r; 
+                g[i,j,1] += λ*(xQ1 + xQ2)/∂r;
+                g[i+1,j,1] -= λ*xQ1/∂r; 
+                g[i,j+1,1] -= λ*xQ2/∂r; 
                 
-                g[i,j,2] .+= λ*(xU1 + xU2)/∂r;
-                g[i+1,j,2] .-= λ*xU1/∂r; 
-                g[i,j+1,2] .-= λ*xU2/∂r; 
+                g[i,j,2] += λ*(xU1 + xU2)/∂r;
+                g[i+1,j,2] -= λ*xU1/∂r; 
+                g[i,j+1,2] -= λ*xU2/∂r; 
                 
              end
         end
