@@ -62,7 +62,7 @@ end
 
 
 
-function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_table,1}, μ::Array{Tuple{H,T},1}) where {T <: AbstractFloat, H<:AbstractCost, D <:Mapping}
+function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_table,1}, μ::Array{hyperparameters{T},1}) where {T <: AbstractFloat, D <:Mapping}
 
     n1, n2, n3 = size(g)
     @assert (n1,n2) == size(X)
