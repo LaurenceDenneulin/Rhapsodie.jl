@@ -29,14 +29,24 @@ struct hyperparameters{T<: AbstractFloat}
     ρ::T # Ratio between the weight and the threshold μ = λ/(2*ρ);
 end
 
+```
+    apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8))
+
+where : 
+    - x0 is an initial reconstruction
+    - A is the operator of the convolution by the PSF
+    - par is a set of hyper parameters given as follow : [λ_I, λ_{Q+U}, ρ_I, ρ_{Q+U}]
+      where ρ is the ratio between the contribution λ and the threshold μ = λ/(2*ρ) of the hypersmooth regularization;
+
+```
 
 function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
-    #par =  [λ_I, λ_{Q+U}, ρ_I, ρ_{Q+U}]
+    #par =  
 
     n1,n2 = size(x0)
     X0 = convert(Array{T,3},x0);
-    μ=[hyperparameters(10. ^par[1], 10. ^par[3]); 
-       hyperparameters(10. ^par[2], 10. ^par[4])];
+    μ=[hyperparameters(par[1], par[3]); 
+       hyperparameters(par[2], par[4])];
        #[(HyperbolicEdgePreserving(10. ^par[3], (0.5,0.5)),10. ^par[1]);
        #(HyperbolicEdgePreserving(10. ^par[4],(0.5,0.5,0.)),10. ^par[2])];
        
