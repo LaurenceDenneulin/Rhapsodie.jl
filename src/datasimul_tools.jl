@@ -82,7 +82,10 @@ function data_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
 end
 
 function data_simulator(Good_Pix, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
-    @assert size(S) == get_par().cols[1:2];
+    if size(S) != get_par().cols[1:2]
+        @warn "Size of the Polarimetric Map is different from the one that I know, it will be padded."
+        S=pad(S);
+    end
    
     M=generate_model(S,A);
     

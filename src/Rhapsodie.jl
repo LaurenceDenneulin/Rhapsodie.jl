@@ -25,6 +25,7 @@ module Rhapsodie
         SetCropOperator,
         crop,
         crop!,
+        pad,
         set_fft_op,
         TwoDimensionalTransformInterpolator,
         FieldTransformOperator,
@@ -36,7 +37,8 @@ module Rhapsodie
         Double_Ratio,
         Linear_Method,
         NonLinear_Method,
-        apply_rhapsodie
+        apply_rhapsodie,
+        apply_edge_preserving_smoothing!
 
     import Base: +, -, *, /, ==, getindex, setindex!, read, write, convert
 

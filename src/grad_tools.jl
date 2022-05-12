@@ -139,6 +139,10 @@ function load_parameters(size_object::NTuple{2,Int64},
         
         bbox_output =(xmax,ymax);  
     end
+    if  (bbox_output[1] + 4 > size_object[1]) || (bbox_output[1] + 4 > size_object[1])
+        @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
+    end
+    
     bbox_output = max(bbox_output .+ 4, size_object);
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
@@ -235,6 +239,10 @@ function load_parameters(size_object::NTuple{2,Int64},
         
         bbox_output =(xmax,ymax);                               
     end
+    if  (bbox_output[1] + 4 > size_object[1]) || (bbox_output[1] + 4 > size_object[1])
+        @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
+    end
+    
     bbox_output = max(bbox_output .+ 4, size_object);
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
@@ -781,5 +789,22 @@ function crop!(X::PolarimetricMap{T})  where {T<:AbstractFloat}
         crop!(view(X.θ,:,:));
 end        
         
-
+function pad(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
+    X_size = size(X);
+    center_diff = X_size./2 - get_par().center;    
+    center_change = translate(center_diff[1], center_diff[2], Id)   
+    PAD=TwoDimensionalTransformInterpolator(get_par().cols[1:2], X_size, ker, ker, center_change)
+    return PAD*X;
+end         
+        
+function pad(X::PolarimetricMap{T}) where {T<:AbstractFloat}  
+    #@assert size(X) .==   get_par().cols
+    return PolarimetricMap(X.parameter_type,
+                           pad(view(X.I,:,:)),
+                           pad(view(X.Q,:,:)),
+                           pad(view(X.U,:,:)),
+                           pad(view(X.Iu,:,:)),
+                           pad(view(X.Ip,:,:)),        
+                           pad(view(X.θ,:,:)))   
+end    
 
