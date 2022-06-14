@@ -30,7 +30,7 @@ struct hyperparameters{T<: AbstractFloat}
 end
 
 ```
-    apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8))
+    apply_rhapsodie('x0', 'A' , 'data', 'hyperparameters'; 'kwd')
 
 where : 
     - x0 is an initial reconstruction
