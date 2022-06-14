@@ -29,7 +29,7 @@ struct hyperparameters{T<: AbstractFloat}
     ρ::T # Ratio between the weight and the threshold μ = λ/(2*ρ);
 end
 
-```
+"""
     apply_rhapsodie('x0', 'A' , 'data', 'hyperparameters'; 'kwd')
 
 where : 
@@ -38,7 +38,7 @@ where :
     - par is a set of hyper parameters given as follow : λ_I, λ_Q+U, ρ_I, ρ_Q+U
       where ρ is the ratio between the contribution λ and the threshold μ = λ/2ρ of the hypersmooth regularization;
 
-```
+"""
 
 function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
     #par =  
