@@ -258,9 +258,10 @@ function load_parameters(size_object::NTuple{2,Int64},
                                        derotang)); 
     
     newcenter= (bbox_output .+1)./2
+    centerdiff=newcenter .- (center[1], center[2])
     for k=1:size_data[3]
-        A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
-        A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
+        A_left=inv(TransRotate(Id, epsilon[k][1] + centerdiff, derotang[k], center, newcenter))
+        A_right=inv(TransRotate(Id, epsilon[k][2] + centerdiff, derotang[k], center, newcenter))   
         push!(Trans_Table, (A_left, A_right))
     end
 end
