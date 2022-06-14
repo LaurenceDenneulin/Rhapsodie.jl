@@ -35,7 +35,7 @@ end
 where : 
     - x0 is an initial reconstruction
     - A is the operator of the convolution by the PSF
-    - par is a set of hyper parameters given as follow : [λ_I, λ_Q+U, ρ_I, ρ_Q+U]
+    - par is a set of hyper parameters given as follow : λ_I, λ_Q+U, ρ_I, ρ_Q+U
       where ρ is the ratio between the contribution λ and the threshold μ = λ/2ρ of the hypersmooth regularization;
 
 ```
