@@ -160,8 +160,8 @@ function load_parameters(size_object::NTuple{2,Int64},
         newcenter= (bbox_output .+1)./2;
         centerdiff=newcenter .- (center[1], center[2])
         for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1] - centerdiff[1], epsilon[k][1][2] - centerdiff[2], Id)
-        A_right=translate( epsilon[k][2][1] - centerdiff[1], epsilon[k][2][2] - centerdiff[2], Id)  
+        A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
+        A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
         push!(Trans_Table, (A_left, A_right))
     end
 end
