@@ -13,8 +13,8 @@
 
 #------------------------------------------------
 
-function data_generator(model::AbstractArray{T,N}, weights::AbstractArray{T,N};bad=zero(T), seed = 1992) where {T<:AbstractFloat,N}   
-    seed === nothing ||  Random.seed!(seed);
+function data_generator(model::AbstractArray{T,N}, weights::AbstractArray{T,N};bad=zero(T)) where {T<:AbstractFloat,N}   
+    #seed === nothing ||  Random.seed!(seed);
     
     data = Array{T}(undef, size(model));
     @inbounds for i in eachindex(data, weights)
@@ -77,7 +77,7 @@ function data_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
 	
 	check_MSE(M,D,W);
 	
-    CS=PolarimetricMap("intensities", A*S.Iu, A*S.Ip, A*S.θ)
+    CS=PolarimetricMap("stokes", A*S.I, A*S.Q, A*S.U)
 	return D,W,S,CS
 end
 
@@ -94,7 +94,7 @@ function data_simulator(Good_Pix, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
 	D=data_generator(M, W)
 	
 	check_MSE(M,D,W);
-    CS=PolarimetricMap("intensities", A*S.Iu, A*S.Ip, A*S.θ)
+    CS=PolarimetricMap("stokes", A*S.I, A*S.Q, A*S.U)
 	return D,W,CS
 end
 
