@@ -92,7 +92,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         
         bbox_output =(xmax,ymax);  
     end
-    bbox_output = bbox_output .+ 4;
+    bbox_output = bbox_output .+ 20;
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
@@ -143,7 +143,7 @@ function load_parameters(size_object::NTuple{2,Int64},
         @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
     end
     
-    bbox_output = max(bbox_output .+ 4, size_object);
+    bbox_output = max(bbox_output .+ 20, size_object);
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
@@ -192,7 +192,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         
         bbox_output =(xmax,ymax);                               
     end
-    bbox_output = bbox_output .+ 4;
+    bbox_output = bbox_output .+ 20;
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
@@ -243,7 +243,7 @@ function load_parameters(size_object::NTuple{2,Int64},
         @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
     end
     
-    bbox_output = max(bbox_output .+ 4, size_object);
+    bbox_output = max(bbox_output .+ 20, size_object);
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
@@ -289,7 +289,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         
         bbox_output =(xmax,ymax);  
     end
-    bbox_output = bbox_output .+ 4;
+    bbox_output = bbox_output .+ 20;
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
@@ -339,7 +339,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         
         bbox_output =(xmax,ymax);                               
     end
-    bbox_output = bbox_output .+ 4;
+    bbox_output = bbox_output .+ 20;
     push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
                                        (size_data[1], size_data[2]), 
                                        size_data[3], 
