@@ -1,4 +1,7 @@
 using Rhapsodie
+using DelimitedFiles
+using EasyFITS
+using Dates
 
 if prod(readdir() .!= "test_results")     
     mkdir("test_results")
@@ -18,14 +21,13 @@ for iter=1:NTOT
     push!(Epsilon,([0. ,0. ],[10.7365 , -1.39344]));
     push!(DerotAng, deg2rad(-300.0));
 end
-		
-psf_center=readdlm("../data/PSF_centers_Airy.txt");
+
+psf_center=readdlm("data/PSF_centers_Airy.txt");
 load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, DerotAng)
 
 writedlm("test_results/Parameters.txt", [DSIZE; NTOT; Nframe; Nrot; Center; 300; [10.7365 , -1.39344]]);
 
-
-psf=read(FitsArray,  "../data/PSF_parametered_Airy.fits");
+psf = readfits("data/PSF_parametered_Airy.fits");
 const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
 BadPixMap=rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
@@ -33,14 +35,22 @@ BadPixMap=rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
 for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 
     data, weight, S, S_convolved=data_simulator(BadPixMap, tau, A);
+    writefits("test_results/DATA_$tau-$DSIZE.fits",
+    ["DATE" => (now(), "date of creation")],
+    data, overwrite=true)
 
-    write(FitsFile, "test_results/DATA_$tau-$DSIZE.fits",    
-          mapslices(transpose,data,dims=[1,2]), overwrite=true)
-    write(FitsFile, "test_results/WEIGHT_$tau-$DSIZE.fits", 
-          mapslices(transpose,weight,dims=[1,2]), overwrite=true)
+    writefits("test_results/WEIGHT_$tau-$DSIZE.fits",
+    ["DATE" => (now(), "date of creation")],
+    mapslices(transpose,weight,dims=[1,2]), overwrite=true)
 
-    write(S, "test_results/TRUE_$tau-$DSIZE.fits")
-    write(S_convolved, "test_results/TRUE_convolved_$tau-$DSIZE.fits")
+    writefits("test_results/TRUE_$tau-$DSIZE.fits",
+    ["Iu"   => S.Iu,
+    "Ip"    => S.Ip,
+    "Theta" => S.θ,
+    "I"     => S.I,
+    "Q"     => S.Q,
+    "U"     => S.U], overwrite=true)
+    #S)
+    #writefits("test_results/TRUE_convolved_$tau-$DSIZE.fits", S_convolved)
 
 end
-
