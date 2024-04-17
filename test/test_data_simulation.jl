@@ -8,7 +8,7 @@ if prod(readdir() .!= "test_results")
 end
 
 DSIZE=128;
-NTOT=64;		
+NTOT=64;
 Nframe=2;
 Nrot=1
 Nangle=Int64.(NTOT/(Nrot*Nframe*4))
@@ -32,25 +32,16 @@ const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
 BadPixMap=rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
 
-for tau in [0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
+for tau in [0.03, 0.07, 0.1, 0.15, 0.25, 0.5]
 
     data, weight, S, S_convolved=data_simulator(BadPixMap, tau, A);
     writefits("test_results/DATA_$tau-$DSIZE.fits",
     ["DATE" => (now(), "date of creation")],
-    data, overwrite=true)
+    mapslices(transpose,data,dims=[1,2]), overwrite=true)
 
     writefits("test_results/WEIGHT_$tau-$DSIZE.fits",
     ["DATE" => (now(), "date of creation")],
     mapslices(transpose,weight,dims=[1,2]), overwrite=true)
 
-    writefits("test_results/TRUE_$tau-$DSIZE.fits",
-    ["Iu"   => S.Iu,
-    "Ip"    => S.Ip,
-    "Theta" => S.θ,
-    "I"     => S.I,
-    "Q"     => S.Q,
-    "U"     => S.U], overwrite=true)
-    #S)
-    #writefits("test_results/TRUE_convolved_$tau-$DSIZE.fits", S_convolved)
-
+    write_polar_map(S_convolved, "test_results/TRUE_$tau-$DSIZE.fits", overwrite=true)
 end

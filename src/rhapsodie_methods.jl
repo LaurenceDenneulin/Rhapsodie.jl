@@ -47,8 +47,6 @@ function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par:
     X0 = convert(Array{T,3},x0);
     μ=[hyperparameters(par[1], par[3]); 
        hyperparameters(par[2], par[4])];
-       #[(HyperbolicEdgePreserving(10. ^par[3], (0.5,0.5)),10. ^par[1]);
-       #(HyperbolicEdgePreserving(10. ^par[4],(0.5,0.5,0.)),10. ^par[2])];
        
     lower_born=vcreate(X0);
     vfill!(view(lower_born,:,:,1),0.0)
@@ -57,7 +55,7 @@ function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par:
     g=vcreate(X0);
     fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), A, g, d, μ)
     x = vmlmb(fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol);
-    return PolarimetricMap(x0.parameter_type,x)
+    return PolarimetricMap(x0.parameter_type, x)
 end
 
 
@@ -67,6 +65,9 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
     n1, n2, n3 = size(g)
     @assert (n1,n2) == size(X)
     @assert n3 == 3
+    
+    #TODO: If X.parameter_type == "Iu_disk, Iu_star, Q, U"
+
     if X.parameter_type == "intensities"
         error("Global reconstruction not implemented on Iu, Ip, and θ. 
                Only use 'stokes' or 'mixed' parameters.")

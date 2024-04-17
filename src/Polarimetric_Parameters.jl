@@ -10,6 +10,8 @@
 #
 # Copyright (c) 2017-2021 Laurence Denneulin (see LICENCE.md)
 
+using EasyFITS
+
 
 #------------------------------------------------
 # Structure definition
@@ -313,6 +315,12 @@ yields an empty
         end
      end
     
+const IU_HEADER_POS = 1
+const IP_HEADER_POS = 2
+const THETA_HEADER_POS = 3
+const I_HEADER_POS = 4
+const Q_HEADER_POS = 5
+const U_HEADER_POS = 6
 #------------------------------------------------
 # Writting function to save PolarimetricMap in fits file
 """
@@ -321,13 +329,11 @@ yields an empty
 where X is a PolarimetricMap, write a fitsfile
 
 """
-
-function write(X::PolarimetricMap, filename::AbstractString)
-    data=cat(X.Iu', X.Ip', X.θ', X.I', X.Q', X.U',dims=3)
-    header=FitsHeader()#;MAPORDER = (2, "Iu, Ip, theta, I, Q, U"))
-    fitsdata=FitsImage(data)#, hdr=header)
-
-    write!(filename, fitsdata)
+function write_polar_map(X::PolarimetricMap, filename::AbstractString; overwrite::Bool = false)
+    data = cat(X.Iu', X.Ip', X.θ', X.I', X.Q', X.U',dims=3)
+    writefits(filename,
+    ["D" => ("Ok", "date of creation")],
+    data, overwrite=overwrite)
 end
 
 """
@@ -340,15 +346,13 @@ create an object of type PolarimetricMap from a fits file with:
    
 """
 
-
-function read(parameter_type::AbstractString, filename::AbstractString)
-    X=read(FitsArray, filename);
-    return PolarimetricMap(parameter_type, 
-                           view(X,:,:,4)', 
-                           view(X,:,:,5)', 
-                           view(X,:,:,6)', 
-                           view(X,:,:,1)', 
-                           view(X,:,:,2)', 
-                           view(X,:,:,3)')
+function read_and_fill_polar_map(parameter_type::AbstractString, filename::AbstractString)
+    X=readfits(filename);
+    return PolarimetricMap(parameter_type,
+                           view(X,:,:,I_HEADER_POS)',
+                           view(X,:,:,Q_HEADER_POS)',
+                           view(X,:,:,U_HEADER_POS)',
+                           view(X,:,:,IU_HEADER_POS)',
+                           view(X,:,:,IP_HEADER_POS)',
+                           view(X,:,:,THETA_HEADER_POS)')
 end
-

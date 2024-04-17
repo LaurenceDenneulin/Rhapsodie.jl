@@ -15,8 +15,8 @@ module Rhapsodie
     export
         PolarimetricPixel,
         PolarimetricMap,
-        write,
-        read,
+        write_polar_map,
+        read_and_fill_polar_map,
         convert,
         load_parameters,
         get_par,

@@ -9,5 +9,5 @@ X=Rhapsodie.PolarimetricMap("stokes", S);
 x=Rhapsodie.PolarimetricPixel("stokes", S[1,1,:]);
 X[1,1]
 X[1,1].I
-Rhapsodie.write(X,"test_results/rand_test.fits")
-Rhapsodie.read("mixed","test_results/rand_test.fits")
+Rhapsodie.write_polar_map(X,"test_results/rand_test.fits")
+Rhapsodie.read_and_fill_polar_map("mixed","test_results/rand_test.fits")

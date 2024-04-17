@@ -41,7 +41,7 @@ struct FieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: Linea
     v_l::NTuple{3,T}
     v_r::NTuple{3,T}
     H_l::L              
-    H_r::R      
+    H_r::R
 end
 
 struct data_table{T<:AbstractFloat,A<:FieldTransformOperator{T}} #autres types
@@ -391,11 +391,11 @@ function Load_Data(name_data, name_weight, name_psf)
 end
 
 function Load_Data(name_data, name_weight)
-	data=read(FitsArray, name_data);
-	weight=read(FitsArray, name_weight);
+	data=readfits(name_data);
+	weight=readfits(name_weight);
 	ker= MyKer;
 	SetCropOperator()
-    for k=1:size(data)[3]   
+    for k=1:size(data)[3]
         output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size= get_par().cols[1:2];
     	T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][1])
@@ -522,17 +522,16 @@ function bbox_size(inp_dims::NTuple{2,Integer},
 end
 
 function set_fft_op(PSF::AbstractArray{T,2}, PSFCenter::AbstractArray{T,1}) where {T <: AbstractFloat}
- 	MapSize=get_par().cols[1:2];
+ 	MapSize=get_par().cols[1:2]
 	MapCenter=floor.(MapSize./2).+1
-	MAP=zeros(MapSize);
+	MAP=zeros(MapSize)
 	ker = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)
 
 	Id = AffineTransform2D{Float64}()
 	Recentering=translate(-(MapCenter[1]-PSFCenter[1]), -(MapCenter[2]-PSFCenter[2]), Id)
 
-	LazyAlgebra.apply!(MAP, ker, Recentering, PSF);
-	MAP./=sum(MAP);
-	push!(PSF_save,MAP);
+	LazyAlgebra.apply!(MAP, ker, Recentering, PSF)
+	MAP./=sum(MAP)
 	F=FFTOperator(MAP)
 	FFT=F\Diag(F*ifftshift(MAP)) .*F;
 	
@@ -684,7 +683,7 @@ function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}, d::data_table{T}) wher
     r = d.H*x - d.data;
     wr = d.weights .* r;
     g .+= d.H'*wr;
-    #f = vdot(Float64, r,wr); #FIXME : mettre une issue !
+    #f = vdot(Float64, r,wr);
     f = mydot(r,wr);
     #crop!(g)
     return Float64(f)/2

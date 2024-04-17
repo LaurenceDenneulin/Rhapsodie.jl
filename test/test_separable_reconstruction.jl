@@ -23,7 +23,7 @@ for iter=1:NTOT
     push!(DerotAng, deg2rad(-par[7]));
 end
 		
-psf_center=readdlm("../data/PSF_centers_Airy.txt");
+psf_center=readdlm("data/PSF_centers_Airy.txt");
 
 load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, DerotAng)
 
@@ -67,15 +67,15 @@ for tau in [0.03, 0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 # Linear Separable inverse method
     ML=Linear_Method(DATA, WEIGHT);
     crop!(ML)
-    write(crop(ML), "test_results/Results_Separable_Linear_$tau-$DSIZE.fits")
+    write_polar_map(crop(ML), "test_results/Results_Separable_Linear_$tau-$DSIZE.fits")
 
 # Double Ratio    
     DR=Double_Ratio(DATA);
-    write(DR, "test_results/Results_Separable_DoubleRatio_$tau-$DSIZE.fits")
+    write_polar_map(DR, "test_results/Results_Separable_DoubleRatio_$tau-$DSIZE.fits")
     
 # Double Difference   
     DD=Double_Difference(DATA);
-    write(DD, "test_results/Results_Separable_DoubleDifference_$tau-$DSIZE.fits")
+    write_polar_map(DD, "test_results/Results_Separable_DoubleDifference_$tau-$DSIZE.fits")
 		
     empty!(Rhapsodie.dataset);
 end
