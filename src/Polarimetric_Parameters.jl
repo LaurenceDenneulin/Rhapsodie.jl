@@ -42,13 +42,13 @@ using EasyFITS
                     I::AbstractArray{T,2},
                     Q::AbstractArray{T,2},
                     U::AbstractArray{T,2},
-                    Iu::AbstractArray{T,2}, # HERE GRAVE MISTAKE ?
+                    Iu::AbstractArray{T,2},
                     Ip::AbstractArray{T,2},
                     θ::AbstractArray{T,2}) where {T<:AbstractFloat} =       PolarimetricMap(parameter_type,        
                                                          convert(Array{T},I),
                                                          convert(Array{T},Q),
                                                          convert(Array{T},U),
-                                                         convert(Array{T},I),
+                                                         convert(Array{T},Iu),
                                                          convert(Array{T},Ip),
                                                          convert(Array{T},θ))
 
