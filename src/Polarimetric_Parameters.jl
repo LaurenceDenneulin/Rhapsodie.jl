@@ -227,11 +227,11 @@ yields an empty
     Base.size(A::PolarimetricMap) = size(A.I)
     Base.length(A::PolarimetricMap) =prod(size(A))*3
     Base.length(A::PolarimetricPixel) =3
-    Base.getindex(X::PolarimetricMap, i::CartesianIndex{2}) where {N} =
+    Base.getindex(X::PolarimetricMap, i::CartesianIndex{2}) =
     PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
     Base.getindex(X::PolarimetricMap, i::Int) = 
     PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
-    Base.getindex(X::PolarimetricMap, i::Int, j::Int) where {T<:Tuple} = 
+    Base.getindex(X::PolarimetricMap, i::Int, j::Int) = 
     getindex(X, CartesianIndex(i,j))
 
     function Base.setindex!(X::PolarimetricMap{Float64}, x::PolarimetricPixel{Float64}, i::Int64, j::Int64)
@@ -314,45 +314,3 @@ yields an empty
             error("unknown parameter type")
         end
      end
-    
-const IU_HEADER_POS = 1
-const IP_HEADER_POS = 2
-const THETA_HEADER_POS = 3
-const I_HEADER_POS = 4
-const Q_HEADER_POS = 5
-const U_HEADER_POS = 6
-#------------------------------------------------
-# Writting function to save PolarimetricMap in fits file
-"""
-    write(X,'filename.fits') 
-    
-where X is a PolarimetricMap, write a fitsfile
-
-"""
-function write_polar_map(X::PolarimetricMap, filename::AbstractString; overwrite::Bool = false)
-    data = cat(X.Iu', X.Ip', X.θ', X.I', X.Q', X.U',dims=3)
-    writefits(filename,
-    ["D" => ("Ok", "")],
-    data, overwrite=overwrite)
-end
-
-"""
-    read('parameter_type','filename.fits') -> PolarimetricMap
-    
-create an object of type PolarimetricMap from a fits file with:
-    - Parameters I, Q, U (i.e. parameter_type = 'stokes')
-    - Parameters Iu, Ip and θ (i.e. parameter_type = 'intensities')
-    - Parameters Iu, Q, U (i.e. parameter_type = 'mixed')
-   
-"""
-
-function read_and_fill_polar_map(parameter_type::AbstractString, filename::AbstractString)
-    X=readfits(filename);
-    return PolarimetricMap(parameter_type,
-                           view(X,:,:,I_HEADER_POS)',
-                           view(X,:,:,Q_HEADER_POS)',
-                           view(X,:,:,U_HEADER_POS)',
-                           view(X,:,:,IU_HEADER_POS)',
-                           view(X,:,:,IP_HEADER_POS)',
-                           view(X,:,:,THETA_HEADER_POS)')
-end

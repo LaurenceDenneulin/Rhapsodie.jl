@@ -32,6 +32,7 @@ struct TPolarimetricMap{T<: AbstractFloat}
     θ::Array{T, 2};
 end
 
+
 TPolarimetricMap(parameter_type::AbstractString,        
                     I::AbstractArray{T, 2},
                     I_star::AbstractArray{T, 2},
@@ -54,7 +55,6 @@ TPolarimetricMap(parameter_type::AbstractString,
                         convert(Array{T},Iu_disk),
                         convert(Array{T},Ip_disk),
                         convert(Array{T},θ))
-
 #------------------------------------------------
 # Constructors 
 """
@@ -105,8 +105,8 @@ yields an empty
             Iu = Iu_star + Iu_disk
             θ = x4       # angle of linearly polarized light
             I = Iu_star + Iu_disk + Ip_disk   # Stokes parameter I (total light intensity)
-            Q = Ip_disk *cos(2*θ);    # Stokes parameter Q
-            U = Ip_disk *sin(2*θ);    # Stokes parameter U
+            Q = Ip_disk * cos(2*θ);    # Stokes parameter Q
+            U = Ip_disk * sin(2*θ);    # Stokes parameter U
         elseif parameter_type == "mixed"
             Iu_star = x1
             I_star = Iu_star
@@ -125,7 +125,7 @@ yields an empty
     end
 
     function TPolarimetricPixel(parameter_type::AbstractString, 
-                             x::N) where {N<:AbstractArray{Float64,1}}
+                             x::N) where {N<:AbstractArray{Float64, 1}}
         @assert length(x) == 4
         TPolarimetricPixel(parameter_type,
                         x[1],
@@ -134,8 +134,7 @@ yields an empty
                         x[4]);
     end 
 
-    function TPolarimetricMap(x::Array{TPolarimetricPixel,2}) 
-        T = Float64;
+    function TPolarimetricMap(x::Matrix{TPolarimetricPixel{T}}) where {T <: AbstractFloat}
         n1, n2 = size(x)
         par_type=x[1].parameter_type;          
         I = Array{T}(undef, n1, n2)    # Stokes parameter I (total light intensity)
@@ -165,7 +164,7 @@ yields an empty
                 else
                    error("Polarimetric types must match.")
                 end
-            end 
+            end
         end
         TPolarimetricMap(par_type, I, I_star, I_disk, Q, U, Iu, Iu_star, Iu_disk, Ip_disk, θ)
     end
@@ -183,9 +182,9 @@ yields an empty
                 pix = TPolarimetricPixel(parameter_type, x1[i1, i2], x2[i1, i2], x3[i1, i2], x4[i1, i2])
                 append!(pixel_list, pix)
             end
-
         TPolarimetricMap(pixel_list)
     end
+end
 
     function TPolarimetricMap(parameter_type::AbstractString, 
                              x::Array{T,4}) where {T<:AbstractFloat}
@@ -216,22 +215,22 @@ yields an empty
 #------------------------------------------------
 # Base fonction redefinitions
     
-    Base.size(A::TPolarimetricMap) = size(A.I)
+    Base.size(A::TPolarimetricMap{T}) where {T<:AbstractFloat} = size(A.I)
     
-    Base.length(A::TPolarimetricMap) = prod(size(A))*3
+    Base.length(A::TPolarimetricMap{T}) where {T<:AbstractFloat} = prod(size(A)) * 4
     
-    Base.length(A::TPolarimetricPixel) = 3
+    Base.length(A::TPolarimetricPixel{T}) where {T<:AbstractFloat} = 4
     
-    Base.getindex(X::TPolarimetricMap, i::CartesianIndex{2}) where {N} =
+    Base.getindex(X::TPolarimetricMap{T}, i::CartesianIndex{2}) where {T<:AbstractFloat} =
     TPolarimetricPixel(X.parameter_type, X.I[i], X.I_star[i], X.I_disk[i], X.Q[i], X.U[i], X.Iu[i], X.Iu_star[i], X.Iu_disk[i], X.Ip_disk[i], X.θ[i])
     
-    Base.getindex(X::TPolarimetricMap, i::Int) = 
+    Base.getindex(X::TPolarimetricMap{T}, i::Int) where {T<:AbstractFloat} = 
     TPolarimetricPixel(X.parameter_type, X.I[i], X.I_star[i], X.I_disk[i], X.Q[i], X.U[i], X.Iu[i], X.Iu_star[i], X.Iu_disk[i], X.Ip_disk[i], X.θ[i])
     
-    Base.getindex(X::TPolarimetricMap, i::Int, j::Int) where {T<:Tuple} = 
+    Base.getindex(X::TPolarimetricMap{T}, i::Int, j::Int) where {T<:AbstractFloat} = 
     getindex(X, CartesianIndex(i,j))
 
-    function Base.setindex!(X::TPolarimetricMap{Float64}, x::TPolarimetricPixel{Float64}, i::Int64, j::Int64)
+    function Base.setindex!(X::TPolarimetricMap{T}, x::TPolarimetricPixel{T}, i::Int64, j::Int64) where {T<:AbstractFloat}
         X.I[i,j]=x.I;
         X.I_star[i,j]=x.I_star;
         X.I_disk[i,j]=x.I_disk;
@@ -243,34 +242,71 @@ yields an empty
         X.Ip_disk[i,j]=x.Ip_disk;
         X.θ[i,j]=x.θ;
     end
+
+    function ==(a::TPolarimetricMap{T}, b::TPolarimetricMap{T}) where {T<:AbstractFloat}
+        if a.parameter_type != b.parameter_type
+            @warn "Parameter type differs."
+        end
+        return round.(a.I) == round.(b.I) &&
+        round.(a.I_star) == round.(b.I_star) &&
+        round.(a.I_disk) == round.(b.I_disk) &&
+        round.(a.Q) == round.(b.Q) &&
+        round.(a.U) == round.(b.U) &&
+        round.(a.Iu) == round.(b.Iu) &&
+        round.(a.Iu_star) == round.(b.Iu_star) &&
+        round.(a.Iu_disk) == round.(b.Iu_disk) &&
+        round.(a.Ip_disk) == round.(b.Ip_disk) &&
+        round.(a.θ) == round.(b.θ)
+    end
+
+    function ==(a::TPolarimetricPixel{T}, b::TPolarimetricPixel{T}) where {T<:AbstractFloat}
+        if a.parameter_type != b.parameter_type
+            @warn "Parameter type differs."
+        end
+        return round(a.I, digits=5) == round(b.I, digits=5) &&
+        round(a.I_star, digits=5) == round(b.I_star, digits=5) &&
+        round(a.I_disk, digits=5) == round(b.I_disk, digits=5) &&
+        round(a.Q, digits=5) == round(b.Q, digits=5) &&
+        round(a.U, digits=5) == round(b.U, digits=5) &&
+        round(a.Iu, digits=5) == round(b.Iu, digits=5) &&
+        round(a.Iu_star, digits=5) == round(b.Iu_star, digits=5) &&
+        round(a.Iu_disk, digits=5) == round(b.Iu_disk, digits=5) &&
+        round(a.Ip_disk, digits=5) == round(b.Ip_disk, digits=5) &&
+        round(a.θ, digits=5) == round(b.θ, digits=5)
+    end
+
+    function +(x::TPolarimetricMap{T}, y::TPolarimetricMap{T}) where {T<:AbstractFloat}
+        I_star = x.I_star + y.I_star
+        I_disk = x.I_disk + y.I_disk
+        Q = x.Q + y.Q
+        U = x.U + y.U
+        return TPolarimetricMap("stokes", I_star, I_disk, Q, U)
+    end
+    function +(x::TPolarimetricPixel{T}, y::TPolarimetricPixel{T}) where {T<:AbstractFloat}
+        I_star = x.I_star + y.I_star
+        I_disk = x.I_disk + y.I_disk
+        Q = x.Q + y.Q
+        U = x.U + y.U
+        return TPolarimetricPixel("stokes", I_star, I_disk, Q, U)
+    end
         
+    function -(x::TPolarimetricPixel{T}, y::TPolarimetricPixel{T}) where {T<:AbstractFloat}
+        I_star = x.I_star - y.I_star
+        I_disk = x.I_disk - y.I_disk
+        Q = x.Q - y.Q
+        U = x.U - y.U
+        return TPolarimetricPixel("stokes", I_star, I_disk, Q, U)
+    end
 
-    +(x::TPolarimetricMap, y::TPolarimetricMap) = TPolarimetricMap(x.parameter_type,
-                                                                x.I + y.I,
-                                                                x.I_star + y.I_star,
-                                                                x.I_disk + y.I_disk,
-                                                                x.Q + y.Q,
-                                                                x.U + y.U,
-                                                                x.Iu + y.Iu,
-                                                                x.Iu_star + y.Iu_star,
-                                                                x.Iu_disk + y.Iu_disk,
-                                                                x.Ip_disk + y.Ip_disk,
-                                                                x.θ + y.θ)
-                                                                
-
-    -(x::TPolarimetricMap, y::TPolarimetricMap) = TPolarimetricMap(x.parameter_type,
-                                                                x.I - y.I,
-                                                                x.I_star - y.I_star,
-                                                                x.I_disk - y.I_disk,
-                                                                x.Q - y.Q, 
-                                                                x.U - y.U,
-                                                                x.Iu - y.Iu,
-                                                                x.Iu_star - y.Iu_star,
-                                                                x.Iu_disk - y.Iu_disk,
-                                                                x.Ip_disk - y.Ip_disk,
-                                                                x.θ - y.θ)
+    function -(x::TPolarimetricMap{T}, y::TPolarimetricMap{T}) where {T<:AbstractFloat}
+        I_star = x.I_star - y.I_star
+        I_disk = x.I_disk - y.I_disk
+        Q = x.Q - y.Q
+        U = x.U - y.U
+        return TPolarimetricMap("stokes", I_star, I_disk, Q, U)
+    end
       
-    vcopy(x::TPolarimetricMap) = TPolarimetricMap(x.parameter_type,
+    vcopy(x::TPolarimetricMap{T}) where {T<:AbstractFloat} = TPolarimetricMap(x.parameter_type,
                                                  x.I,
                                                  x.I_star,
                                                  x.I_disk,
@@ -283,15 +319,15 @@ yields an empty
                                                  x.θ)
 
 
-    function vcreate(x::TPolarimetricMap)
+    function vcreate(x::TPolarimetricMap{T}) where {T<:AbstractFloat}
         @assert (x.parameter_type == "stokes") |
                 (x.parameter_type == "intensities") |
                 (x.parameter_type == "mixed")
         n1,n2=size(x);
         return TPolarimetricMap(x.parameter_type, n1, n2)
-    end     
+    end
                                         
-    function +(x::TPolarimetricMap, y::Array{T,3}) where {T<:AbstractFloat} 
+    function +(x::TPolarimetricMap{T}, y::Array{T,3}) where {T<:AbstractFloat} 
         @assert size(y)[1:2] == size(x)       
         if x.parameter_type == "stokes"
            I_star = x.I_star + view(y, :, :, 1);
@@ -303,24 +339,24 @@ yields an empty
            Iu_star = x.Iu_star + view(y, :, :, 1);
            Iu_disk = x.Iu_disk + view(y, :, :, 2);
            Ip_disk = x.Ip_disk + view(y, :, :, 3);
-           θ=x.θ + view(y, :, :, 4);
+           θ = x.θ + view(y, :, :, 4);
            return TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, θ)
         elseif x.parameter_type == "mixed"
            Iu_star = x.Iu_star + view(y, :, :, 1);
            Iu_disk = x.Iu_disk + view(y, :, :, 2);
-           Q=x.Q + view(y, :, :, 3);
-           U=x.U + view(y, :, :, 4);
+           Q = x.Q + view(y, :, :, 3);
+           U = x.U + view(y, :, :, 4);
            return TPolarimetricMap("mixed", Iu_star, Iu_disk, Q, U)
         else
             error("unknown parameter type")
         end
     end
+    
+    +(y::Array{T,3}, x::TPolarimetricMap{T}) where {T<:AbstractFloat} = x + y
+    -(x::TPolarimetricMap{T}, y::Array{T,3}) where {T<:AbstractFloat} = x + (-y)
      
-     +(y::Array{T,3}, x::TPolarimetricMap) where {T<:AbstractFloat} = x + y
-     -(x::TPolarimetricMap, y::Array{T,3}) where {T<:AbstractFloat} = x + (-y)
      
-     
-     function convert(::Type{Array{T,3}}, x::TPolarimetricMap{T}) where {T <:AbstractFloat}
+    function convert(::Type{Array{T,3}}, x::TPolarimetricMap{T}) where {T <:AbstractFloat}
          if x.parameter_type == "stokes"
            return cat(x.I_star, x.I_disk, x.Q, x.U, dims=4)
         elseif x.parameter_type == "intensities"
@@ -330,7 +366,7 @@ yields an empty
         else
             error("unknown parameter type")
         end
-     end
+    end
 
 const I_HEADER_POS = 1
 const I_STAR_HEADER_POS = 2
@@ -350,7 +386,7 @@ const THETA_HEADER_POS = 10
 where X is a TPolarimetricMap, write a fitsfile
 
 """
-function write_polar_map(X::TPolarimetricMap, filename::AbstractString; overwrite::Bool = false)
+function write_polar_map(X::TPolarimetricMap{T}, filename::AbstractString; overwrite::Bool = false) where {T<:AbstractFloat}
     data = cat(X.I', X.I_star', X.I_disk', X.Q', X.U', X.Iu', X.Iu_star', X.Iu_disk', X.Ip_disk', X.θ', dims=3)
     writefits(filename,
     ["D" => ("Ok", "")],
@@ -405,4 +441,5 @@ function read_and_fill_polar_map(parameter_type::AbstractString, filename::Abstr
                            view(X, :, :, IU_DISK_HEADER_POS)',
                            view(X, :, :, IP_DISK_HEADER_POS)',
                            view(X, :, :, THETA_HEADER_POS)')
+    end
 end

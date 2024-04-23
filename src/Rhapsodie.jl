@@ -15,6 +15,8 @@ module Rhapsodie
     export
         PolarimetricPixel,
         PolarimetricMap,
+        TPolarimetricPixel,
+        TPolarimetricMap,
         write_polar_map,
         read_and_fill_polar_map,
         convert,
@@ -60,9 +62,11 @@ module Rhapsodie
     using Random
 
     include("Polarimetric_Parameters.jl")
+    include("tpolarimetric_parameters.jl")
     include("grad_tools.jl")
     include("separable_methods.jl")
     include("rhapsodie_methods.jl")
     include("datasimul_tools.jl")
+
 end
 

@@ -18,7 +18,7 @@ function data_generator(model::AbstractArray{T,N}, weights::AbstractArray{T,N};b
     
     data = Array{T}(undef, size(model));
     @inbounds for i in eachindex(data, weights)
-        w=weights[i] 
+        w=weights[i]
         (isfinite(w) && w >= 0 ) || error("invalid weights")
         if w >0            
             data[i] = model[i]  +randn()/sqrt(w)    
