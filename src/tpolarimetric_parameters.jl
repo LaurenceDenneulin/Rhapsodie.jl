@@ -81,7 +81,7 @@ construction from Stokes parameters S=(I_star, I_disk, Q, U):
 yields an empty    
 """    
     function TPolarimetricPixel(parameter_type::AbstractString, 
-                             x1::T, 
+                             x1::T,
                              x2::T, 
                              x3::T,
                              x4::T) where {T<:AbstractFloat}

@@ -31,7 +31,7 @@ load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_cente
 for tau in [0.03, 0.03]#, 0.07, 0.1, 0.15, 0.25, 0.5]
 #----------------------------------------------
 # Loading the pre-processed data (i.e. bad pixels have been interpolated	
-    Load_Data("test_results/DATA_$tau-$DSIZE.fits", 
+    load_data("test_results/DATA_$tau-$DSIZE.fits", 
                          "test_results/WEIGHT_$tau-$DSIZE.fits")
 	Sdim=length(Rhapsodie.dataset)
     

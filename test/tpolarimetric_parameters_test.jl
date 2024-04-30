@@ -69,5 +69,4 @@ module TPolarimetricTestSuite
         pix_list[1] = diff_pix
         @test_throws "Polarimetric types must match." TPolarimetricMap(pix_list)
     end
-    @testset "TPolarimetricMap "
 end # module

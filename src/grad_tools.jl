@@ -1,8 +1,7 @@
 #
 # grad_tools.jl
 #
-# Provide tools to load the instrumental parameters and the 
-# calibrated data, and for the calculus of the RHAPSODIE data fidelity term. 
+# Provide tools for the calculus of the RHAPSODIE data fidelity term. 
 #
 # ------------------------------------------------
 #
@@ -14,422 +13,37 @@
 
 #------------------------------------------------
 
-const ImageInterpolator{T<:AbstractFloat, K<:Kernel{T}} = TwoDimensionalTransformInterpolator{T,K,K}
-const MyKer = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)
-#const MyKer = LinearInterpolators.RectangularSpline(Float64, LinearInterpolators.Flat)
-#const MyKer = LinearInterpolators.LinearSpline(Float64, LinearInterpolators.Flat)
 
 struct parameters_table{T<: AbstractFloat}
-     cols::NTuple{3,Int64} #Imput size (reconstruction)
-     rows::NTuple{2,Int64} #Output size (data)
+     cols::NTuple{3, Int64} #Input size (reconstruction)
+     rows::NTuple{2, Int64} #Output size (data)
      dataset_length::Int64
      Nframe::Int64
      Nrot::Int64
      Nangle::Int64
      v::Vector{NTuple{2, NTuple{3, T}}}
-     indices::Array{Int64,2}
-     center::Array{T,1}
-     psf_center::NTuple{2,Array{T,1}}
-     epsilon::Vector{NTuple{2,Array{T,1}}} 
+     indices::Array{Int64, 2}
+     center::Array{T, 1}
+     psf_center::NTuple{2,Array{T, 1}}
+     epsilon::Vector{NTuple{2,Array{T, 1}}} 
      derotang::Vector{T}
 end
 
 
 struct FieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: LinearMapping
-    cols::NTuple{3,Int} 
-    rows::NTuple{2,Int} 
-    v_l::NTuple{3,T}
-    v_r::NTuple{3,T}
+    cols::NTuple{3, Int} 
+    rows::NTuple{2, Int} 
+    v_l::NTuple{3, T}
+    v_r::NTuple{3, T}
     H_l::L              
     H_r::R
 end
 
-struct data_table{T<:AbstractFloat,A<:FieldTransformOperator{T}} #autres types
+struct data_table{T<:AbstractFloat, A<:FieldTransformOperator{T}} # Other types
     data::Array{T, 2};
     weights::Array{T, 2};
     H::A
 end
-
-
-const Trans_Table = Vector{NTuple{2,AffineTransform2D}}(); #Contains all the affine transform used 
-const Parameters = parameters_table[];
-get_par()::parameters_table = Parameters[1];
-const dataset = data_table[];
-
-const PSF_save = Vector{Array{Float64,2}}();
-get_PSF()=PSF_save[1];
-const EPSILON_save = Array{Float64,1}(undef,1);
-function set_epsilon(epsilon)
-    EPSILON_save[1]=epsilon
-end
-get_epsilon()::Float64=EPSILON_save[1];
-const PRECOND_SAVE= Vector{Any}();
-U()=PRECOND_SAVE[1];
-
-const MASK_save = Vector{Array{Float64,2}}();
-get_MASK()=MASK_save[1];
-
-function load_parameters(size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}},
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(sets_indices)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1], epsilon[k][1][2], Id)
-        A_right=translate( epsilon[k][2][1], epsilon[k][2][2], Id) 
-         
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-               
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);  
-    end
-    bbox_output = bbox_output .+ 20;
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       Float64[])); 
-    
-        newcenter= (bbox_output .+1)./2;
-        centerdiff=newcenter .- (center[1], center[2])
-        for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
-        A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-function load_parameters(size_object::NTuple{2,Int64}, 
-                         size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}},
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(sets_indices)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1], epsilon[k][1][2], Id)
-        A_right=translate( epsilon[k][2][1], epsilon[k][2][2], Id) 
-         
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-               
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);  
-    end
-    if  (bbox_output[1] + 4 > size_object[1]) || (bbox_output[1] + 4 > size_object[1])
-        @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
-    end
-    
-    bbox_output = max(bbox_output .+ 20, size_object);
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       Float64[])); 
-    
-        newcenter= (bbox_output .+1)./2;
-        centerdiff=newcenter .- (center[1], center[2])
-        for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
-        A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-
-
-function load_parameters(size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}}, 
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}}, 
-                         derotang::Vector{Float64})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(sets_indices)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=TransRotate(Id, epsilon[k][1], derotang[k], center, center)
-        A_right=TransRotate(Id, epsilon[k][2], derotang[k], center, center)   
-        
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-                
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);                               
-    end
-    bbox_output = bbox_output .+ 20;
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       derotang)); 
-    
-    newcenter= (bbox_output .+1)./2
-    for k=1:size_data[3]
-        A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
-        A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-function load_parameters(size_object::NTuple{2,Int64},
-                         size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}}, 
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}}, 
-                         derotang::Vector{Float64})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(sets_indices)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=TransRotate(Id, epsilon[k][1], derotang[k], center, center)
-        A_right=TransRotate(Id, epsilon[k][2], derotang[k], center, center)   
-        
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-                
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);                               
-    end
-    if  (bbox_output[1] + 4 > size_object[1]) || (bbox_output[1] + 4 > size_object[1])
-        @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
-    end
-    
-    bbox_output = max(bbox_output .+ 20, size_object);
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       derotang)); 
-    
-    newcenter= (bbox_output .+1)./2
-    for k=1:size_data[3]
-        A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
-        A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-function load_parameters(size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}},
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}},
-                         v::Array{Float64,2})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(Nframe, size_data[3], v)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1], epsilon[k][1][2], Id)
-        A_right=translate( epsilon[k][2][1], epsilon[k][2][2], Id) 
-         
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-               
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);  
-    end
-    bbox_output = bbox_output .+ 20;
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       Float64[])); 
-    
-        newcenter= (bbox_output .+1)./2;
-        centerdiff=newcenter .- (center[1], center[2])
-        for k=1:size_data[3]
-        A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
-        A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-
-
-function load_parameters(size_data::NTuple{3,Int64}, 
-                         Nframe::Int64,
-                         Nrot::Int64, 
-                         Nangle::Int64, 
-                         center::Array{Float64,1}, 
-                         psf_center::NTuple{2,Array{Float64,1}}, 
-                         epsilon::Vector{NTuple{2,Array{Float64,1}}}, 
-                         derotang::Vector{Float64},
-                         v::Array{Float64,2})
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
-    sets_v=Set_Vi(Nframe, size_data[3], v)
-    bbox_output=(0,0)
-    Id = AffineTransform2D{Float64}()
-    for k=1:size_data[3]
-        A_left=TransRotate(Id, epsilon[k][1], derotang[k], center, center)
-        A_right=TransRotate(Id, epsilon[k][2], derotang[k], center, center)   
-        
-        out_left=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-        out_right=bbox_size((size_data[1], Int64(size_data[2]/2)), A_left)[1]
-                
-        xmax=max(bbox_output[1],out_left[1],out_right[1]);
-        ymax=max(bbox_output[2],out_left[2],out_right[2]);
-        
-        bbox_output =(xmax,ymax);                               
-    end
-    bbox_output = bbox_output .+ 20;
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
-                                       (size_data[1], size_data[2]), 
-                                       size_data[3], 
-                                       Nframe, 
-                                       Nrot, 
-                                       Nangle, 
-                                       sets_v, 
-                                       sets_indices, 
-                                       center, 
-                                       psf_center,
-                                       epsilon, 
-                                       derotang)); 
-    
-    newcenter= (bbox_output .+1)./2
-    for k=1:size_data[3]
-        A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
-        A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
-        push!(Trans_Table, (A_left, A_right))
-    end
-end
-
-
-
-
-function Load_Data(name_data, name_weight, name_psf)
-	data=read(FitsArray, name_data);
-	weight=read(FitsArray, name_weight);
-	psf=read(FitsArray, name_psf);
-	A_l=set_fft_op((psf[1:end÷2,:]'[:,:]), get_par().psf_center[1]);
-	A_r=set_fft_op((psf[end÷2+1:end,:]'[:,:]), get_par().psf_center[1]);
-	ker= MyKer;
-	SetCropOperator()
-    for k=1:size(data)[3]   
-        output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
-        input_size= get_par().cols[1:2];
-    	T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][1])
-    	T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][2])
-	    push!(dataset, data_table((data[:,:,k]')[:,:], 
-	                              (weight[:,:,k]')[:,:], 
-	                              FieldTransformOperator(get_par().cols, 
-	                                                     get_par().rows, 
-	                                                     get_par().v[k][1],
-	                                                     get_par().v[k][2],
-	                                                     T1,
-	                                                     T2,
-	                                                     A_l)));#,
-	                                                     #A_r)));
-	end
-end
-
-function Load_Data(name_data, name_weight)
-	data=readfits(name_data);
-	weight=readfits(name_weight);
-	ker= MyKer;
-	SetCropOperator()
-    for k=1:size(data)[3]
-        output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
-        input_size= get_par().cols[1:2];
-    	T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][1])
-    	T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][2])
-    	promote
-	    push!(dataset, data_table((data[:,:,k]')[:,:], 
-	                              (weight[:,:,k]')[:,:], 
-	                              FieldTransformOperator(get_par().cols, 
-	                                                     get_par().rows, 
-	                                                     get_par().v[k][1],
-	                                                     get_par().v[k][2],
-	                                                     T1,
-	                                                     T2,
-	                                                     LazyAlgebra.Id)));
-	end
-end
-
-
-
-function Indices(S::Int64,Nrot::Int64,Nframe::Int64)
-#S = le nombre total de frame gauche ou droite
-#Nrot : Nombre de positions du derotateur
-#Nframe : Nombre de frame par positions de la lame demi-onde
-	
-	Nangle=Int32.(S/(Nrot*Nframe*4)) #Nombre de rotations de la lame demi-onde
-	INDICES=zeros(4,Nframe*Nangle*Nrot)
-	for i=1:4
-		ind=repeat(range(0,stop=4*Nframe*(Nrot*Nangle-1),length=Nrot*Nangle), inner=Nframe)+(Nframe*i .-mod.(range(1,stop=Nframe*Nangle*Nrot,length=Nframe*Nangle*Nrot),Nframe))
-		INDICES[i,:]=ind
-	end
-	INDICES=round.(Int64, INDICES);
-	return INDICES
-end
-
 
 function Set_Vi(Indices::AbstractArray{Int64,2}; alpha=[0, pi/4, pi/8, 3*pi/8], psi=[0,pi/2])
 	J(a)=[cos(2*a) sin(2*a); sin(2*a) -cos(2*a)]
@@ -584,7 +198,7 @@ function apply!(α::Real,
 	z_l .+= R.v_l[i]*x_i;
 	z_r .+= R.v_r[i]*x_i;
     end
-    dst[:, 1:(n÷2)  ] = R.H_l*z_l;
+    dst[:, 1:(n÷2)] = R.H_l*z_l;
     dst[:, (n÷2)+1:n] = R.H_r*z_r;
     return dst
 end
@@ -807,5 +421,4 @@ function pad(X::PolarimetricMap{T}) where {T<:AbstractFloat}
                            pad(view(X.Iu,:,:)),
                            pad(view(X.Ip,:,:)),        
                            pad(view(X.θ,:,:)))   
-end    
-
+end

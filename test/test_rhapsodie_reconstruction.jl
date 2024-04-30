@@ -26,7 +26,7 @@ psf_center=readdlm("data/PSF_centers_Airy.txt");
 
 load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, DerotAng)
 
-Load_Data("test_results/DATA_$tau-$DSIZE.fits", 
+load_data("test_results/DATA_$tau-$DSIZE.fits", 
           "test_results/WEIGHT_$tau-$DSIZE.fits")
                          
 PSF=readfits("data/PSF_parametered_Airy.fits");

@@ -22,7 +22,7 @@ module Rhapsodie
         convert,
         load_parameters,
         get_par,
-        Load_Data,
+        load_data,
         fg!,
         SetCropOperator,
         crop,
@@ -64,9 +64,10 @@ module Rhapsodie
     include("Polarimetric_Parameters.jl")
     include("tpolarimetric_parameters.jl")
     include("grad_tools.jl")
+    include("tgrad_tools.jl")
     include("separable_methods.jl")
     include("rhapsodie_methods.jl")
     include("datasimul_tools.jl")
-
+    include("loaders.jl")
 end
 
