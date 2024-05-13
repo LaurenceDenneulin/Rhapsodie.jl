@@ -1,5 +1,5 @@
 #
-# grad_tools.jl
+# tgrad_tools.jl
 #
 # Provide tools for the calculus of the RHAPSODIE data fidelity term. 
 #
@@ -166,7 +166,7 @@ function apply!(α::Real,
     z_r_star = R.v_r[1] * src.I_star; 
     z_l_disk = R.v_l[1] * src.I_disk + R.v_l[2] * src.Q + R.v_l[3] * src.U;
     z_r_disk = R.v_r[1] * src.I_disk + R.v_r[2] * src.Q + R.v_r[3] * src.U;
-    dst[:, 1:(n÷2)] = R.H_l * z_l_disk + R.H_l * z_l_star; # TODO H_l et H_r version disk et star
+    dst[:, 1:(n÷2)] = R.H_l * z_l_disk + R.H_l * z_l_star;
     dst[:, (n÷2)+1:n] = R.H_r * z_r_disk + R.H_r * z_r_star;
     return dst
 end
@@ -183,7 +183,6 @@ function apply!(α::Real,
     @assert size(dst) == R.cols
     n = R.rows[2]
     @assert iseven(n)
-    # TODO H_l et H_r version disk et star
     y_l_star = R.H_l_star' * view(src, :, 1:(n÷2))
     y_l_disk = R.H_l_disk' * view(src, :, 1:(n÷2))
     y_r_star = R.H_r_star' * view(src, :, 1:(n÷2))
@@ -197,7 +196,7 @@ function apply!(α::Real,
     dst = PolarimetricMap(I_disk, I_star, Q, U);
     return dst
 end
-      
+
 function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloat}
     local f::Float64 = 0.0;
     vfill!(g,0.0)
@@ -209,7 +208,6 @@ function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloa
     return f
 end       
 
-        
 function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}, d::data_table{T}) where {T<:AbstractFloat}
     r = d.H*x - d.data;
     wr = d.weights .* r;

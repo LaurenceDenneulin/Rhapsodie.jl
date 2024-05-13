@@ -142,10 +142,10 @@ function load_data(name_data, name_weight)
     for k=1:size(data)[3]
         output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size= get_par().cols[1:2];
-        T_l_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][1])
-        T_l_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][1])
-        T_r_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][2])
-        T_r_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Trans_Table[k][2])
+        T_l_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][1])
+        T_l_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][2])
+        T_r_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][3])
+        T_r_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][4])
         push!(dataset, data_table((data[:,:,k]')[:,:], 
                     (weight[:,:,k]')[:,:], 
                     FieldTransformOperator(get_par().cols,

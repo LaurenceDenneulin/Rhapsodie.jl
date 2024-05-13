@@ -29,7 +29,7 @@ function data_generator(model::AbstractArray{T,N}, weights::AbstractArray{T,N};b
     return data
 end
 
-function generate_model(S::PolarimetricMap, A::Mapping)
+function generate_model(S::TPolarimetricMap, A::Mapping)
     @assert size(S) == get_par().cols[1:2];
     
     M=Array{Float64,3}(undef, get_par().rows[1], 
@@ -59,7 +59,7 @@ function generate_model(S::PolarimetricMap, A::Mapping)
 	                                        T2,
 	                                        A)
 	    
-	    M[:,:,k].=F * cat(S.I, S.Q, S.U, dims=3);	    
+	    M[:,:,k].=F * cat(S.I_star, S.I_disk, S.Q, S.U, dims=4);	    
 	end
     return M
 end
@@ -69,24 +69,6 @@ function data_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
     
     S = generate_parameters(map_size, tau);
 
-    M = generate_model(S,A);
-    
-    VAR = max.(M,zero(eltype(M))) .+ro_noise^2
-	W = Good_Pix ./ VAR
-	D = data_generator(M, W)
-	
-	check_MSE(M,D,W);
-	
-    CS = PolarimetricMap("stokes", A*S.I, A*S.Q, A*S.U)
-	return D, W, S, CS
-end
-
-function data_simulator(Good_Pix, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
-    if size(S) != get_par().cols[1:2]
-        @warn "Size of the Polarimetric Map is wrong, it will be padded."
-        S = pad(S);
-    end
-   
     M = generate_model(S, A);
     
     VAR = max.(M,zero(eltype(M))) .+ro_noise^2
@@ -94,12 +76,30 @@ function data_simulator(Good_Pix, A::Mapping, S::PolarimetricMap; ro_noise=8.5)
 	D = data_generator(M, W)
 	
 	check_MSE(M, D, W);
-    CS = PolarimetricMap("stokes", A*S.I, A*S.Q, A*S.U)
+	
+    CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
+	return D, W, S, CS
+end
+
+function data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise=8.5)
+    if size(S) != get_par().cols[1:2]
+        @warn "Size of the Polarimetric Map is wrong, it will be padded."
+        S = pad(S);
+    end
+   
+    M = generate_model(S, A);
+    
+    VAR = max.(M,zero(eltype(M))) .+ ro_noise^2
+	W = Good_Pix ./ VAR
+	D = data_generator(M, W)
+	
+	check_MSE(M, D, W);
+    CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
 	return D, W, CS
 end
 
 function check_MSE(model, data, weights)
-	MSE = vdot(data-model, weights.*(data-model)) ;
+	MSE = vdot(data - model, weights .* (data-model)) ;
 	N=count(weights .> 0);
 	println("MSE=$MSE, N=$N, MSE/N=$(MSE/N)");
 end
@@ -140,10 +140,10 @@ function generate_parameters(map_size, tau)
     		end
 		end
 	end    
-	θ=θ.*(Ip.!=0);
-	STAR=STAR1+STAR2
-	STAR[round(Int64,10*map_size[1]/16)-3,round(Int64,10*map_size[2]/16)]=20000.0;
-	STAR[round(Int64,10*map_size[1]/16),round(Int64,10*map_size[2]/16)-3]=100000.0;
+	θ = θ.*(Ip.!=0);
+	STAR = STAR1+STAR2
+	STAR[round(Int64,10*map_size[1]/16)-3,round(Int64,10*map_size[2]/16)] = 20000.0;
+	STAR[round(Int64,10*map_size[1]/16),round(Int64,10*map_size[2]/16)-3] = 100000.0;
 
-    return PolarimetricMap("intensities", Iu+STAR, Ip, θ);
+    return TPolarimetricMap("intensities", Iu, STAR, Ip, θ);
 end
