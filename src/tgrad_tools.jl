@@ -134,7 +134,7 @@ function FieldTransformOperator(cols::NTuple{3,Int64},
 end
 
 function vcreate(::Type{LazyAlgebra.Direct}, A::FieldTransformOperator{T},
-                 x::PolarimetricMap, scratch::Bool = false) where {T <: AbstractFloat}
+                 x::TPolarimetricMap, scratch::Bool = false) where {T <: AbstractFloat}
     @assert !Base.has_offset_axes(x)
     @assert size(x) == A.cols[1:2]
     @assert length(x) == A.cols[3]
@@ -152,7 +152,7 @@ end
 function apply!(α::Real,
                 ::Type{LazyAlgebra.Direct},
                 R::FieldTransformOperator{T},
-                src::PolarimetricMap,
+                src::TPolarimetricMap,
                 scratch::Bool,
                 β::Real,
                 dst::AbstractArray{T,2}) where {T<:AbstractFloat}
@@ -177,7 +177,7 @@ function apply!(α::Real,
                 src::AbstractArray{T,2},
                 scratch::Bool,
                 β::Real,
-                dst::PolarimetricMap) where {T<:AbstractFloat}
+                dst::TPolarimetricMap) where {T<:AbstractFloat}
     @assert β==0 && α==1
     @assert size(src) == R.rows
     @assert size(dst) == R.cols
