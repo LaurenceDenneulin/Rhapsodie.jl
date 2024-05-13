@@ -145,7 +145,7 @@ function vcreate(::Type{LazyAlgebra.Adjoint}, A::FieldTransformOperator{T},
                  x::AbstractArray{T,2}, scratch::Bool = false) where {T <: AbstractFloat}
     @assert !Base.has_offset_axes(x)
     @assert size(x) == A.rows
-    PolarimetricMap("stokes", A.cols[1], A.cols[2])
+    TPolarimetricMap("stokes", A.cols[1], A.cols[2])
 end
 
 
@@ -193,7 +193,7 @@ function apply!(α::Real,
     I_star = R.v_l[1] * y_l_star + R.v_r[1] * y_r_star
     Q = R.v_l[2] * y_l_disk + R.v_r[2] * y_r_disk
     U = R.v_l[3] * y_l_disk + R.v_r[3] * y_r_disk
-    dst = PolarimetricMap(I_disk, I_star, Q, U);
+    dst = TPolarimetricMap("stokes", I_disk, I_star, Q, U);
     return dst
 end
 
