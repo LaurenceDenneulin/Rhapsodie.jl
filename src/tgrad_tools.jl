@@ -137,7 +137,7 @@ function vcreate(::Type{LazyAlgebra.Direct}, A::FieldTransformOperator{T},
                  x::TPolarimetricMap, scratch::Bool = false) where {T <: AbstractFloat}
     @assert !Base.has_offset_axes(x)
     @assert size(x) == A.cols[1:2]
-    @assert length(x) == A.cols[3]
+    @assert A.cols[3] == 4
     Array{T,2}(undef, A.rows)
 end
 
@@ -157,7 +157,7 @@ function apply!(α::Real,
                 β::Real,
                 dst::AbstractArray{T,2}) where {T<:AbstractFloat}
     @assert β==0 && α==1
-    @assert size(src) == R.cols
+    @assert size(src) == R.cols[1:2]
     @assert size(dst) == R.rows
     n = R.rows[2]
     @assert iseven(n)
@@ -200,7 +200,7 @@ end
 function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloat}
     local f::Float64 = 0.0;
     vfill!(g,0.0)
-    for k=1 in eachindex(dataset)
+    for k in 1:length(dataset)
         if sum(dataset[k].weights) !=0
             f += fg!(x, g, dataset[k])
         end

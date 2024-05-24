@@ -30,11 +30,11 @@ writedlm("test_results/Parameters.txt", [DSIZE; NTOT; Nframe; Nrot; Center; 300;
 psf = readfits("data/PSF_parametered_Airy.fits");
 const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
-BadPixMap=rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
+BadPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
 
 for tau in [0.03, 0.07, 0.1, 0.15, 0.25, 0.5]
 
-    data, weight, S, S_convolved=data_simulator(BadPixMap, tau, A);
+    data, weight, S, S_convolved = data_simulator(BadPixMap, tau, A);
     writefits("test_results/DATA_$tau-$DSIZE.fits",
     ["DATE" => (now(), "date of creation")],
     mapslices(transpose,data,dims=[1,2]), overwrite=true)

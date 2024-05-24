@@ -31,7 +31,7 @@ function Indices(S::Int64,Nrot::Int64,Nframe::Int64)
 	return INDICES
 end
 
-function trans_rotate(A::AffineTransform2D{Float64}, EPSILON, CENTER, NEWCENTER; ANGLE=0, is_star=True::Bool)
+function trans_rotate(A::AffineTransform2D{Float64}, EPSILON, CENTER, NEWCENTER; ANGLE=0, is_star=true::Bool)
     if is_star
         return translate(translate(CENTER[1]-EPSILON[1],CENTER[2]-EPSILON[2], A),-NEWCENTER[1], -NEWCENTER[2])
     end
@@ -43,9 +43,9 @@ function get_max_boxing(Id::AffineTransform2D{Float64}, size_data::NTuple{3, Int
     if derotang !== nothing
         for k=1:size_data[3]
             A_left_star=trans_rotate(Id, epsilon[k][1], center, center)
-            A_left_disk=trans_rotate(Id, epsilon[k][1], center, center, ANGLE=derotang[k], is_star=False)
+            A_left_disk=trans_rotate(Id, epsilon[k][1], center, center, ANGLE=derotang[k], is_star=false)
             A_right_star=trans_rotate(Id, epsilon[k][2], center, center)
-            A_right_disk=trans_rotate(Id, epsilon[k][2], center, center, ANGLE=derotang[k], is_star=False)
+            A_right_disk=trans_rotate(Id, epsilon[k][2], center, center, ANGLE=derotang[k], is_star=false)
 
             out_left_star=bbox_size((size_data[1], Int64(size_data[2] / 2)), A_left_star)[1]
             out_left_disk=bbox_size((size_data[1], Int64(size_data[2] / 2)), A_left_disk)[1]
@@ -77,15 +77,17 @@ function get_max_boxing(Id::AffineTransform2D{Float64}, size_data::NTuple{3, Int
 
 end
 
-function push_to_trans_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTuple{2, Array{Float64, 1}}}, centerdiff::Array{Float64, 1}; derotang=nothing::Vector{Float64})
+function push_to_trans_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTuple{2, Array{Float64, 1}}}, center::Array{Float64, 1}, newcenter::Tuple{Float64, Float64}; derotang=nothing::Vector{Float64})
+    @assert isnothing(derotang) || length(epsilon) == length(derotang)
+    n_frames = length(epsilon)
     if isnothing(derotang)
-        for k=1:size_data[3]
+        for k=1:n_frames
             A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
             A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
             push!(Trans_Table, (A_left, A_right))
         end
     else
-        for k=1:size_data[3]
+        for k=1:n_frames
             A_left=inv(TransRotate(Id, epsilon[k][1], derotang[k], center, newcenter))
             A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
             push!(Trans_Table, (A_left, A_right))
@@ -96,9 +98,9 @@ end
 function push_to_star_disk_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTuple{2, Array{Float64, 1}}}, center::Array{Float64, 1}, newcenter::Array{Float64, 1}, derotang::Vector{Float64})
     for k=1:size_data[3]
         A_left_star=inv(trans_rotate(Id, epsilon[k][1], center, newcenter))
-        A_left_disk=inv(trans_rotate(Id, epsilon[k][1], center, newcenter, ANGLE=derotang[k], is_star=False))
+        A_left_disk=inv(trans_rotate(Id, epsilon[k][1], center, newcenter, ANGLE=derotang[k], is_star=false))
         A_right_star=inv(trans_rotate(Id, epsilon[k][2], center, newcenter))
-        A_right_disk=inv(trans_rotate(Id, epsilon[k][2], center, newcenter, ANGLE=derotang[k], is_star=False))
+        A_right_disk=inv(trans_rotate(Id, epsilon[k][2], center, newcenter, ANGLE=derotang[k], is_star=false))
         push!(Star_Disk_Table, (A_left_star, A_left_disk, A_right_star, A_right_disk))
     end
 end
@@ -120,17 +122,16 @@ function load_parameters(size_data::NTuple{3,Int64},
     if  (bbox_output[1] + padding > size_object[1]) || (bbox_output[2] + padding > size_object[2])
         @warn "The reconstruction size estimated by the mehod is larger than the size given by the user." "bbox_ouput set to the size obtained by the method." 
     end
-
     bbox_output = max(bbox_output .+ padding, size_object); 
-    push!(Parameters, parameters_table((bbox_output[1],bbox_output[2],3), 
+    push!(Parameters, parameters_table((bbox_output[1], bbox_output[2], 4),
                     (size_data[1], size_data[2]), size_data[3], Nframe, Nrot, Nangle,
                     sets_v, sets_indices, center, psf_center, epsilon, derotang));
     newcenter = (bbox_output .+1)./2
     if size_data[3] == Nrot
        push_to_star_disk_table(Id, epsilon, center, newcenter, derotang) 
     else
-        centerdiff = newcenter .- (center[1], center[2])
-        push_to_trans_table(Id, epsilon, centerdiff, derotang=derotang)
+        
+        push_to_trans_table(Id, epsilon, center, newcenter, derotang=derotang)
     end
 end
 
@@ -140,8 +141,8 @@ function load_data(name_data, name_weight)
     ker= MyKer;
     SetCropOperator()
     for k=1:size(data)[3]
-        output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
-        input_size= get_par().cols[1:2];
+        output_size = (get_par().rows[1], Int64(get_par().rows[2]/2));
+        input_size = get_par().cols[1:2];
         T_l_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][1])
         T_l_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][2])
         T_r_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][3])

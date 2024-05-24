@@ -120,7 +120,7 @@ function do_data_perturbation(dset::Array{data_table,1},eps::Float64)
     return p
 end                      
 
-function do_data_perturbation(d::data_table,eps::Float64)
+function do_data_perturbation(d::data_table, eps::Float64)
     return data_table(d.data + eps* randn(size(d.data)), d.weights, d.H);
 end                      
 

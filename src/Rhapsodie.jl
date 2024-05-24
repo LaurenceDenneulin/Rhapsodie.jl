@@ -65,10 +65,10 @@ module Rhapsodie
     include("tpolarimetric_parameters.jl")
     include("grad_tools.jl")
     include("tgrad_tools.jl")
+    include("loaders.jl")
     include("separable_methods.jl")
     include("rhapsodie_methods.jl")
+    include("trhapsodie_methods.jl")
     include("datasimul_tools.jl")
     include("tdatasimul_tools.jl")
-    include("loaders.jl")
 end
-

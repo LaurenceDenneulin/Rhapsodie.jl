@@ -59,12 +59,12 @@ function generate_model(S::TPolarimetricMap, A::Mapping)
 	                                        T2,
 	                                        A)
 	    
-	    M[:,:,k].=F * cat(S.I_star, S.I_disk, S.Q, S.U, dims=4);	    
+	    M[:,:,k].=F * S; #cat(S.I_star, S.I_disk, S.Q, S.U, dims=3);
 	end
     return M
 end
     
-function data_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
+function tdata_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
     map_size=get_par().cols[1:2];
     
     S = generate_parameters(map_size, tau);
@@ -89,7 +89,7 @@ function data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise=8.5)
    
     M = generate_model(S, A);
     
-    VAR = max.(M,zero(eltype(M))) .+ ro_noise^2
+    VAR = max.(M, zero(eltype(M))) .+ ro_noise^2
 	W = Good_Pix ./ VAR
 	D = data_generator(M, W)
 	
@@ -145,5 +145,5 @@ function generate_parameters(map_size, tau)
 	STAR[round(Int64,10*map_size[1]/16)-3,round(Int64,10*map_size[2]/16)] = 20000.0;
 	STAR[round(Int64,10*map_size[1]/16),round(Int64,10*map_size[2]/16)-3] = 100000.0;
 
-    return TPolarimetricMap("intensities", Iu, STAR, Ip, θ);
+    return TPolarimetricMap("intensities", STAR, Iu, Ip, θ);
 end

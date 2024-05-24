@@ -176,15 +176,15 @@ yields an empty
                              x4::A) where {T<:AbstractFloat, A<:AbstractArray{T,2}}
         n1, n2 = size(x1)
         @assert ((n1,n2) == size(x2)) && ((n1,n2) == size(x3) && ((n1,n2) == size(x4)))
-        pixel_list = Array{TPolarimetricPixel,2}
+        pixel_list = Matrix{TPolarimetricPixel{T}}(undef, n1, n2)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1
-                pix = TPolarimetricPixel(parameter_type, x1[i1, i2], x2[i1, i2], x3[i1, i2], x4[i1, i2])
-                append!(pixel_list, pix)
+            pix = TPolarimetricPixel(parameter_type, x1[i1, i2], x2[i1, i2], x3[i1, i2], x4[i1, i2])
+            pixel_list[i1, i2] = pix
             end
+        end
         TPolarimetricMap(pixel_list)
     end
-end
 
     function TPolarimetricMap(parameter_type::AbstractString, 
                              x::Array{T,4}) where {T<:AbstractFloat}
@@ -358,11 +358,11 @@ end
      
     function convert(::Type{Array{T,3}}, x::TPolarimetricMap{T}) where {T <:AbstractFloat}
          if x.parameter_type == "stokes"
-           return cat(x.I_star, x.I_disk, x.Q, x.U, dims=4)
+           return cat(x.I_star, x.I_disk, x.Q, x.U, dims=3)
         elseif x.parameter_type == "intensities"
-           return cat(x.Iu_star, x.Iu_disk, x.Ip_disk, x.θ, dims=4)
+           return cat(x.Iu_star, x.Iu_disk, x.Ip_disk, x.θ, dims=3)
         elseif x.parameter_type == "mixed"
-           return cat(x.Iu_star, x.Iu_disk, x.Q, x.U, dims=4)
+           return cat(x.Iu_star, x.Iu_disk, x.Q, x.U, dims=3)
         else
             error("unknown parameter type")
         end
