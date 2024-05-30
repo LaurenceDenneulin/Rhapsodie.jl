@@ -35,31 +35,24 @@ function generate_model(S::TPolarimetricMap, A::Mapping)
     M=Array{Float64,3}(undef, get_par().rows[1], 
                               get_par().rows[2], 
                               get_par().dataset_length)
-	
 	ker = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)    
     for k=1:get_par().dataset_length
         output_size = (get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size = get_par().cols[1:2];
-    	T1 = TwoDimensionalTransformInterpolator(output_size, 
-    	                                       input_size, 
-    	                                       ker, 
-    	                                       ker, 
-    	                                       Trans_Table[k][1])
-    	T2 = TwoDimensionalTransformInterpolator(output_size, 
-    	                                       input_size, 
-    	                                       ker, 
-    	                                       ker, 
-    	                                       Trans_Table[k][2])
-	    
-	    F = FieldTransformOperator(get_par().cols, 
+    	T_star_left = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][1])
+    	T_disk_left = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][2])
+    	T_star_right = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][3])
+    	T_disk_right = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][4])
+	    F = TFieldTransformOperator(get_par().cols, 
 	                                        get_par().rows, 
 	                                        get_par().v[k][1],
 	                                        get_par().v[k][2],
-	                                        T1,
-	                                        T2,
-	                                        A)
+	                                        T_star_left,
+											T_disk_left,
+	                                        T_star_right,
+											T_disk_right)
 	    
-	    M[:,:,k].=F * S; #cat(S.I_star, S.I_disk, S.Q, S.U, dims=3);
+	    M[:,:,k].= F * cat(A * S.I_star, A * S.I_disk, A * S.Q, A * S.U, dims=3);
 	end
     return M
 end
@@ -81,7 +74,7 @@ function tdata_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
 	return D, W, S, CS
 end
 
-function data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise=8.5)
+function ddit_data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise=8.5)
     if size(S) != get_par().cols[1:2]
         @warn "Size of the Polarimetric Map is wrong, it will be padded."
         S = pad(S);
@@ -94,8 +87,9 @@ function data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise=8.5)
 	D = data_generator(M, W)
 	
 	check_MSE(M, D, W);
-    CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
-	return D, W, CS
+    S = TPolarimetricMap("stokes", S.I_star, S.I_disk, S.Q, S.U)
+	CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
+	return D, W, S, CS
 end
 
 function check_MSE(model, data, weights)

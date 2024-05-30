@@ -122,82 +122,90 @@ function set_fft_op(PSF::AbstractArray{T,2}, PSFCenter::AbstractArray{T,1}) wher
 	return FFT
 end
 
-function FieldTransformOperator(cols::NTuple{3,Int64},
-                                rows::NTuple{2,Int64},
-                                v_l::NTuple{3,T},
-                                v_r::NTuple{3,T},
-                                T_l_star::TwoDimensionalTransformInterpolator{T},
-                                T_l_disk::TwoDimensionalTransformInterpolator{T},
-                                T_r_star::TwoDimensionalTransformInterpolator{T},
-                                T_r_disk::TwoDimensionalTransformInterpolator{T}) where {T <: AbstractFloat}
-    FieldTransformOperator(cols, rows, v_l, v_r, T_l_star, T_l_disk, T_r_star, T_r_disk)
+
+
+struct TFieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: LinearMapping
+    cols::NTuple{3, Int} 
+    rows::NTuple{2, Int} 
+    v_l::NTuple{3, T}
+    v_r::NTuple{3, T}
+    H_l_star::L              
+    H_l_disk::L              
+    H_r_star::R
+    H_r_disk::R
 end
 
-function vcreate(::Type{LazyAlgebra.Direct}, A::FieldTransformOperator{T},
-                 x::TPolarimetricMap, scratch::Bool = false) where {T <: AbstractFloat}
+struct Tdata_table{T<:AbstractFloat, A<:TFieldTransformOperator{T}} # Other types
+    data::Array{T, 2};
+    weights::Array{T, 2};
+    H::A
+end
+
+function vcreate(::Type{LazyAlgebra.Direct}, A::TFieldTransformOperator{T},
+                 x::AbstractArray{T, 3}, scratch::Bool = false) where {T <: AbstractFloat}
     @assert !Base.has_offset_axes(x)
-    @assert size(x) == A.cols[1:2]
+    @assert size(x) == A.cols
     @assert A.cols[3] == 4
-    Array{T,2}(undef, A.rows)
+    Array{T, 2}(undef, A.rows)
 end
 
-function vcreate(::Type{LazyAlgebra.Adjoint}, A::FieldTransformOperator{T},
-                 x::AbstractArray{T,2}, scratch::Bool = false) where {T <: AbstractFloat}
+function vcreate(::Type{LazyAlgebra.Adjoint}, A::TFieldTransformOperator{T},
+                x::AbstractArray{T, 2}, scratch::Bool = false) where {T <: AbstractFloat}
     @assert !Base.has_offset_axes(x)
     @assert size(x) == A.rows
-    TPolarimetricMap("stokes", A.cols[1], A.cols[2])
+    Array{T,3}(undef, A.cols)
 end
 
 
 function apply!(α::Real,
                 ::Type{LazyAlgebra.Direct},
-                R::FieldTransformOperator{T},
-                src::TPolarimetricMap,
+                R::TFieldTransformOperator{T},
+                src::AbstractArray{T,3},
                 scratch::Bool,
                 β::Real,
                 dst::AbstractArray{T,2}) where {T<:AbstractFloat}
     @assert β==0 && α==1
-    @assert size(src) == R.cols[1:2]
+    @assert size(src) == R.cols
     @assert size(dst) == R.rows
     n = R.rows[2]
     @assert iseven(n)
-
-    z_l_star = R.v_l[1] * src.I_star; 
-    z_r_star = R.v_r[1] * src.I_star; 
-    z_l_disk = R.v_l[1] * src.I_disk + R.v_l[2] * src.Q + R.v_l[3] * src.U;
-    z_r_disk = R.v_r[1] * src.I_disk + R.v_r[2] * src.Q + R.v_r[3] * src.U;
-    dst[:, 1:(n÷2)] = R.H_l * z_l_disk + R.H_l * z_l_star;
-    dst[:, (n÷2)+1:n] = R.H_r * z_r_disk + R.H_r * z_r_star;
+    z_l_star = R.v_l[1] * src[:,:,1];
+    z_r_star = R.v_r[1] * src[:,:,1];
+    z_l_disk = R.v_l[1] * src[:,:,2] + R.v_l[2] * src[:,:,3] + R.v_l[3] * src[:,:,4];
+    z_r_disk = R.v_r[1] * src[:,:,2] + R.v_r[2] * src[:,:,3] + R.v_r[3] * src[:,:,4];
+    dst[:, 1:(n÷2)] = R.H_l_disk * z_l_disk + R.H_l_star * z_l_star;
+    dst[:, (n÷2)+1:n] = R.H_r_disk * z_r_disk + R.H_r_star * z_r_star;
     return dst
 end
 
 function apply!(α::Real,
                 ::Type{LazyAlgebra.Adjoint},
-                R::FieldTransformOperator{T},
+                R::TFieldTransformOperator{T},
                 src::AbstractArray{T,2},
                 scratch::Bool,
                 β::Real,
-                dst::TPolarimetricMap) where {T<:AbstractFloat}
+                dst::AbstractArray{T, 3}) where {T<:AbstractFloat}
     @assert β==0 && α==1
     @assert size(src) == R.rows
     @assert size(dst) == R.cols
+
     n = R.rows[2]
     @assert iseven(n)
     y_l_star = R.H_l_star' * view(src, :, 1:(n÷2))
     y_l_disk = R.H_l_disk' * view(src, :, 1:(n÷2))
-    y_r_star = R.H_r_star' * view(src, :, 1:(n÷2))
-    y_r_disk = R.H_r_disk' * view(src, :, 1:(n÷2))
+    y_r_star = R.H_r_star' * view(src, :, (n÷2)+1:n)
+    y_r_disk = R.H_r_disk' * view(src, :, (n÷2)+1:n)
     #dst[:,:,i] = R.v_l[i]*y_l + R.v_r[i]*y_r;
     # FIXME: The following should be equivalent and much faster.
     I_disk = R.v_l[1] * y_l_disk + R.v_r[1] * y_r_disk
     I_star = R.v_l[1] * y_l_star + R.v_r[1] * y_r_star
     Q = R.v_l[2] * y_l_disk + R.v_r[2] * y_r_disk
     U = R.v_l[3] * y_l_disk + R.v_r[3] * y_r_disk
-    dst = TPolarimetricMap("stokes", I_disk, I_star, Q, U);
+    dst .= cat(I_star, I_disk, Q, U, dims=3);
     return dst
 end
 
-function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloat}
+function fg!(x::AbstractArray{T,3}, g::AbstractArray{T,3}) where {T<:AbstractFloat}
     local f::Float64 = 0.0;
     vfill!(g,0.0)
     for k in 1:length(dataset)
@@ -208,7 +216,7 @@ function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloa
     return f
 end       
 
-function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}, d::data_table{T}) where {T<:AbstractFloat}
+function fg!(x::AbstractArray{T, 3}, g::AbstractArray{T,3}, d::Tdata_table{T}) where {T<:AbstractFloat}
     r = d.H*x - d.data;
     wr = d.weights .* r;
     g .+= d.H'*wr;

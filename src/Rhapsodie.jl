@@ -31,6 +31,7 @@ module Rhapsodie
         set_fft_op,
         TwoDimensionalTransformInterpolator,
         FieldTransformOperator,
+        TFieldTransformOperator,
         data_simulator,
         generate_model,
         data_generator,
@@ -71,4 +72,5 @@ module Rhapsodie
     include("trhapsodie_methods.jl")
     include("datasimul_tools.jl")
     include("tdatasimul_tools.jl")
+    include("utils.jl")
 end

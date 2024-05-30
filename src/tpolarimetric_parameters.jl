@@ -187,7 +187,7 @@ yields an empty
     end
 
     function TPolarimetricMap(parameter_type::AbstractString, 
-                             x::Array{T,4}) where {T<:AbstractFloat}
+                             x::Array{T,3}) where {T<:AbstractFloat}
         n1, n2, n3 = size(x)
 
         @assert n3 == 4
@@ -326,7 +326,7 @@ yields an empty
         n1,n2=size(x);
         return TPolarimetricMap(x.parameter_type, n1, n2)
     end
-                                        
+
     function +(x::TPolarimetricMap{T}, y::Array{T,3}) where {T<:AbstractFloat} 
         @assert size(y)[1:2] == size(x)       
         if x.parameter_type == "stokes"

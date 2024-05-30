@@ -2,7 +2,7 @@ const Trans_Table = Vector{NTuple{2, AffineTransform2D}}(); # Contains all affin
 const Star_Disk_Table = Vector{NTuple{4, AffineTransform2D}}(); # Contains all affine transforms used 
 const Parameters = parameters_table[];
 get_par()::parameters_table = Parameters[1];
-const dataset = data_table[];
+const dataset = Tdata_table[];
 
 
 const EPSILON_save = Array{Float64, 1}(undef, 1);
@@ -96,7 +96,7 @@ function push_to_trans_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTu
 end
 
 function push_to_star_disk_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTuple{2, Array{Float64, 1}}}, center::Array{Float64, 1}, newcenter::Array{Float64, 1}, derotang::Vector{Float64})
-    for k=1:size_data[3]
+    for k=1:length(epsilon)
         A_left_star=inv(trans_rotate(Id, epsilon[k][1], center, newcenter))
         A_left_disk=inv(trans_rotate(Id, epsilon[k][1], center, newcenter, ANGLE=derotang[k], is_star=false))
         A_right_star=inv(trans_rotate(Id, epsilon[k][2], center, newcenter))
@@ -116,7 +116,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         size_object=(0, 0)::NTuple{2,Int64},
         padding=20::Int64)
     Id = AffineTransform2D{Float64}()
-    sets_indices=Indices(size_data[3],Nrot,Nframe)
+    sets_indices=Indices(size_data[3], Nangle, Nframe)
     sets_v=Set_Vi(sets_indices)
     bbox_output = get_max_boxing(Id, size_data, center, epsilon, derotang=derotang)
     if  (bbox_output[1] + padding > size_object[1]) || (bbox_output[2] + padding > size_object[2])
@@ -128,9 +128,8 @@ function load_parameters(size_data::NTuple{3,Int64},
                     sets_v, sets_indices, center, psf_center, epsilon, derotang));
     newcenter = (bbox_output .+1)./2
     if size_data[3] == Nrot
-       push_to_star_disk_table(Id, epsilon, center, newcenter, derotang) 
+        push_to_star_disk_table(Id, epsilon, center, [newcenter[1], newcenter[2]], derotang) 
     else
-        
         push_to_trans_table(Id, epsilon, center, newcenter, derotang=derotang)
     end
 end
@@ -147,9 +146,9 @@ function load_data(name_data, name_weight)
         T_l_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][2])
         T_r_star = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][3])
         T_r_disk = TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, Star_Disk_Table[k][4])
-        push!(dataset, data_table((data[:,:,k]')[:,:], 
-                    (weight[:,:,k]')[:,:], 
-                    FieldTransformOperator(get_par().cols,
+        push!(dataset, Tdata_table((data[:,:,k]')[:,:], 
+                    (weight[:,:,k]')[:,:],
+                    TFieldTransformOperator(get_par().cols,
                                             get_par().rows,
                                             get_par().v[k][1],
                                             get_par().v[k][2],
