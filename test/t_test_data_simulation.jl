@@ -7,6 +7,7 @@ if prod(readdir() .!= "test_results")
     mkdir("test_results")
 end
 
+contrast = 1e-1
 DSIZE=256;
 NTOT=64;
 Nframe=2;
@@ -29,20 +30,20 @@ writedlm("data_for_demo/Parameters.txt", [DSIZE; NTOT; Nframe; Nrot; Center; 300
 psf = readfits("data_for_demo/PSF_parametered_Airy.fits");
 const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
+Iu_star_fits = readfits("data_for_demo/Iu_star.fits");
+Iu_star = view(Iu_star_fits, :, :, 1)
 
 ddit_fits = readfits("data_for_demo/ddit_simulated_data.fits");
-I_tot = view(ddit_fits, :, :, 1)
-max_I_tot = maximum(I_tot)
-I_tot *= 100 / max_I_tot
+I_disk = view(ddit_fits, :, :, 1)
+I_disk .*= contrast * maximum(Iu_star) / maximum(I_disk)
 
 Ip_disk = ddit_fits[:,:,2]
-Ip_disk *= 100 / max_I_tot
-
+Ip_disk .*= contrast * maximum(Iu_star) / maximum(I_disk)
 scattering = ddit_fits[:,:,3]
-star_map = Rhapsodie.generate_parameters(size(Ip_disk), 0)
-Iu_star = star_map.I_star
-Iu_disk = I_tot - Ip_disk
 
+Iu_disk = I_disk - Ip_disk
+
+Iu_star = Matrix(Iu_star)
 
 X0 = Rhapsodie.TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, scattering)
 

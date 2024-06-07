@@ -121,4 +121,5 @@ function pad(X::TPolarimetricMap{T}) where {T<:AbstractFloat}
                            pad(view(X.Iu_disk,:,:)),
                            pad(view(X.Ip_disk,:,:)),        
                            pad(view(X.θ,:,:)))   
+
 end

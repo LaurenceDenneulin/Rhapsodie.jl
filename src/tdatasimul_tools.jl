@@ -52,7 +52,7 @@ function generate_model(S::TPolarimetricMap, A::Mapping)
 	                                        T_star_right,
 											T_disk_right)
 	    
-	    M[:,:,k].= F * cat(A * S.I_star, A * S.I_disk, A * S.Q, A * S.U, dims=3);
+	    M[:,:,k].= F * cat(S.I_star, A * S.I_disk, A * S.Q, A * S.U, dims=3);
 	end
     return M
 end
@@ -70,7 +70,7 @@ function tdata_simulator(Good_Pix, tau, A::Mapping; ro_noise=8.5)
 	
 	check_MSE(M, D, W);
 	
-    CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
+    CS = TPolarimetricMap("stokes", S.I_star, A*S.I_disk, A*S.Q, A*S.U)
 	return D, W, S, CS
 end
 
@@ -88,7 +88,7 @@ function ddit_data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise
 	
 	check_MSE(M, D, W);
     S = TPolarimetricMap("stokes", S.I_star, S.I_disk, S.Q, S.U)
-	CS = TPolarimetricMap("stokes", A*S.I_star, A*S.I_disk, A*S.Q, A*S.U)
+	CS = TPolarimetricMap("stokes", S.I_star, A*S.I_disk, A*S.Q, A*S.U)
 	return D, W, S, CS
 end
 

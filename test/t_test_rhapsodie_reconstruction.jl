@@ -30,10 +30,10 @@ PSF=readfits("data_for_demo/PSF_parametered_Airy.fits");
 const A=set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
 
 X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
-regularisation_parameters = 10 .^[0.5 , -1. , -1., -3.]; #(in log10)
+regularisation_parameters = 10 .^[0.5 , -1. , 0, -3.]; #(in log10)
 
 
 @time x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters,
-                          maxeval=1000, maxiter=10);
+                          maxeval=1000, maxiter=100);
 crop!(x)
 write_polar_map(x, "test_results/RHAPSODIE_non_linear_results.fits", overwrite=true)

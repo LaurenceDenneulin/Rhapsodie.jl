@@ -46,12 +46,12 @@ function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, pa
     μ=[hyperparameters(par[1], par[3]); 
        hyperparameters(par[2], par[4])];
     lower_born=vcreate(X0);
-    vfill!(view(lower_born,:,:,1),0.0)
-    vfill!(view(lower_born,:,:,2:3),-Inf)
+    vfill!(view(lower_born,:,:,1:2),0.0)
+    vfill!(view(lower_born,:,:,3:4),-Inf)
    
     g=vcreate(X0);
     fg!(x,g) = apply_gradient!(TPolarimetricMap(x0.parameter_type, x), A, g, d, μ)
-    x = vmlmb(fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verbose=true);
+    x = vmlmb(fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return TPolarimetricMap(x0.parameter_type, x)
 end
 
@@ -69,7 +69,7 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
                Only use 'stokes' or 'mixed' parameters.")
     end
     
-    Ay = cat(A*X.I_star[:,:], A*X.I_disk[:,:], A*X.Q[:,:], A*X.U[:,:], dims=3)
+    Ay = cat(X.I_star[:,:], A*X.I_disk[:,:], A*X.Q[:,:], A*X.U[:,:], dims=3)
     # Compute data fidelity term and gradient. (As gradient is initially set to
     # zero, we can recycle it between x and y.)
     @assert size(g) == size(Ay)
@@ -90,8 +90,11 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
         @inbounds for i2 in 1:n2
             for i1 in 1:n1
                 if X.Ip_disk[i1,i2] > 0
-                    g[i1,i2,2] += (X.Q[i1,i2]*g[i1,i2,3] +
-                                   X.U[i1,i2]*g[i1,i2,4])/X.Ip_disk[i1,i2]
+                    #g[i1,i2,2] += (X.Q[i1,i2]*g[i1,i2,3] +
+                    #               X.U[i1,i2]*g[i1,i2,4])/X.Ip_disk[i1,i2]
+                    # New try
+                    g[i1, i2, 3] += g[i1, i2, 2] * (X.Q[i1, i2] / X.Ip_disk[i1, i2])
+                    g[i1, i2, 4] += g[i1, i2, 2] * (X.U[i1, i2] / X.Ip_disk[i1, i2])
                 end
             end
         end 

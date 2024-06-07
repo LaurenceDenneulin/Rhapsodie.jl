@@ -20,6 +20,16 @@ const MyKer = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.
 
 # TODO : User should be able to select which kernel
 
+struct TFieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: LinearMapping
+    cols::NTuple{3, Int} 
+    rows::NTuple{2, Int} 
+    v_l::NTuple{3, T}
+    v_r::NTuple{3, T}
+    H_l_star::L              
+    H_l_disk::L              
+    H_r_star::R
+    H_r_disk::R
+end
 
 function Set_Vi(Indices::AbstractArray{Int64,2}; alpha=[0, pi/4, pi/8, 3*pi/8], psi=[0,pi/2])
 	J(a)=[cos(2*a) sin(2*a); sin(2*a) -cos(2*a)]
@@ -120,19 +130,6 @@ function set_fft_op(PSF::AbstractArray{T,2}, PSFCenter::AbstractArray{T,1}) wher
 	FFT=F\Diag(F*ifftshift(MAP)) .*F;
 	
 	return FFT
-end
-
-
-
-struct TFieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: LinearMapping
-    cols::NTuple{3, Int} 
-    rows::NTuple{2, Int} 
-    v_l::NTuple{3, T}
-    v_r::NTuple{3, T}
-    H_l_star::L              
-    H_l_disk::L              
-    H_r_star::R
-    H_r_disk::R
 end
 
 struct Tdata_table{T<:AbstractFloat, A<:TFieldTransformOperator{T}} # Other types
