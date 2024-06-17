@@ -25,6 +25,8 @@ end
 psf_center=readdlm("data_for_demo/PSF_centers_Airy.txt");
 Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, derotang=DerotAng)
 
+println()
+
 writedlm("data_for_demo/Parameters.txt", [DSIZE; NTOT; Nframe; Nrot; Center; 300; [10.7365 , -1.39344]]);
 
 psf = readfits("data_for_demo/PSF_parametered_Airy.fits");
@@ -35,10 +37,13 @@ Iu_star = view(Iu_star_fits, :, :, 1)
 
 ddit_fits = readfits("data_for_demo/ddit_simulated_data.fits");
 I_disk = view(ddit_fits, :, :, 1)
-I_disk .*= contrast * maximum(Iu_star) / maximum(I_disk)
+
+normalization_term = contrast * maximum(Iu_star) / maximum(I_disk)
+
+I_disk .*= normalization_term
 
 Ip_disk = ddit_fits[:,:,2]
-Ip_disk .*= contrast * maximum(Iu_star) / maximum(I_disk)
+Ip_disk .*= normalization_term
 scattering = ddit_fits[:,:,3]
 
 Iu_disk = I_disk - Ip_disk
@@ -50,6 +55,9 @@ X0 = Rhapsodie.TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, scatte
 GoodPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
 
 data, weight, S, S_convolved = Rhapsodie.ddit_data_simulator(GoodPixMap, A, X0, ro_noise=8.5);
+
+writefits("test_results/mask.fits", ["DATE" => (now(), "date of creation")], Rhapsodie.get_MASK(), overwrite=true)
+
 writefits("test_results/DATA.fits",
 ["DATE" => (now(), "date of creation")],
 mapslices(transpose,data,dims=[1,2]), overwrite=true)
@@ -57,6 +65,9 @@ mapslices(transpose,data,dims=[1,2]), overwrite=true)
 writefits("test_results/WEIGHT.fits",
 ["DATE" => (now(), "date of creation")],
 mapslices(transpose,weight,dims=[1,2]), overwrite=true)
+
+S_convolved = Rhapsodie.crop(S_convolved)
+S = Rhapsodie.crop(S)
 
 Rhapsodie.write_polar_map(S_convolved, "test_results/TRUE_convolved.fits", overwrite=true)
 Rhapsodie.write_polar_map(S, "test_results/TRUE.fits", overwrite=true)

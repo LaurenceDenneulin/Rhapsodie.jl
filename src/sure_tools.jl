@@ -48,6 +48,15 @@ function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::data_table) where {T
     return MSE,n
 end
 
+function MSE_object(x_est::Array{T,N}, x_true::Array{T,N}) where {T <: AbstractFloat,N}
+    MSE=0.0;
+    for i=1:size(x_est)[3]
+        MSE += vdot(x_est[:,:,i] - x_true[:,:,i],  x_est[:,:,i] - x_true[:,:,i]);
+    end
+    MSE = MSE^2
+    return MSE
+end
+
 function sure_crit(x::Array{T,N},
                    δx::Array{T,N}, 
                    d::Array{data_table,1}, 

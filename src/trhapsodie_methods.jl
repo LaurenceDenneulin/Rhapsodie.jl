@@ -90,11 +90,11 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
         @inbounds for i2 in 1:n2
             for i1 in 1:n1
                 if X.Ip_disk[i1,i2] > 0
-                    #g[i1,i2,2] += (X.Q[i1,i2]*g[i1,i2,3] +
-                    #               X.U[i1,i2]*g[i1,i2,4])/X.Ip_disk[i1,i2]
+                    g[i1,i2,2] += (X.Q[i1,i2]*g[i1,i2,3] +
+                                  X.U[i1,i2]*g[i1,i2,4])/X.Ip_disk[i1,i2]
                     # New try
-                    g[i1, i2, 3] += g[i1, i2, 2] * (X.Q[i1, i2] / X.Ip_disk[i1, i2])
-                    g[i1, i2, 4] += g[i1, i2, 2] * (X.U[i1, i2] / X.Ip_disk[i1, i2])
+                    # g[i1, i2, 3] += g[i1, i2, 2] * (X.Q[i1, i2] / X.Ip_disk[i1, i2])
+                    # g[i1, i2, 4] += g[i1, i2, 2] * (X.U[i1, i2] / X.Ip_disk[i1, i2])
                 end
             end
         end 

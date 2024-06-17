@@ -132,13 +132,13 @@ function load_parameters(size_data::NTuple{3,Int64},
     else
         push_to_trans_table(Id, epsilon, center, newcenter, derotang=derotang)
     end
+    SetCropOperator()
 end
 
 function load_data(name_data, name_weight)
     data=readfits(name_data);
     weight=readfits(name_weight);
     ker= MyKer;
-    SetCropOperator()
     for k=1:size(data)[3]
         output_size = (get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size = get_par().cols[1:2];

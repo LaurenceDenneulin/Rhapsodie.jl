@@ -11,7 +11,7 @@ function SetCropOperator()
     for i=1:get_par().cols[1]
 	    for j=1:get_par().cols[2]	
 		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
-		    Mask1[i,j,:] .=1;
+		    Mask1[i,j,:] =1;
 		    end
 	    end
     end
@@ -24,7 +24,7 @@ function SetCropOperator()
     for i=1:get_par().cols[1]
 	    for j=1:get_par().cols[2]	
 		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
-		    Mask2[i,j,:] .=1;
+		    Mask2[i,j,:] =1;
 		    end
 	    end
     end
@@ -53,9 +53,9 @@ end
 
 function crop!(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
     #@assert size(X) .==   get_par().cols 
-    X[.!isfinite.(X)].=0   
-    X .*= get_MASK()        
-end        
+    X[.!isfinite.(X)].=0
+    X .*= get_MASK()
+end
         
 function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,3}}
     #@assert size(X) .==   get_par().cols
@@ -72,17 +72,18 @@ end
 
 function crop(X::TPolarimetricMap{T}) where {T<:AbstractFloat}  
     #@assert size(X) .==   get_par().cols
+    println("Passed through here")
     return TPolarimetricMap(X.parameter_type,
-                           crop(view(X.I,:,:)),
-                           crop(view(X.I_star,:,:)),
-                           crop(view(X.I_disk,:,:)),
-                           crop(view(X.Q,:,:)),
-                           crop(view(X.U,:,:)),
-                           crop(view(X.Iu,:,:)),
-                           crop(view(X.Iu_star,:,:)),
-                           crop(view(X.Iu_disk,:,:)),
-                           crop(view(X.Ip_disk,:,:)),        
-                           crop(view(X.θ,:,:)))   
+                           crop!(view(X.I,:,:)),
+                           crop!(view(X.I_star,:,:)),
+                           crop!(view(X.I_disk,:,:)),
+                           crop!(view(X.Q,:,:)),
+                           crop!(view(X.U,:,:)),
+                           crop!(view(X.Iu,:,:)),
+                           crop!(view(X.Iu_star,:,:)),
+                           crop!(view(X.Iu_disk,:,:)),
+                           crop!(view(X.Ip_disk,:,:)),        
+                           crop!(view(X.θ,:,:)))   
 end        
 
 function crop!(X::TPolarimetricMap{T})  where {T<:AbstractFloat}
