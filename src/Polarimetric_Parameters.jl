@@ -46,7 +46,7 @@
                                                          convert(Array{T},I),
                                                          convert(Array{T},Q),
                                                          convert(Array{T},U),
-                                                         convert(Array{T},I),
+                                                         convert(Array{T},Iu),
                                                          convert(Array{T},Ip),
                                                          convert(Array{T},θ))
 
