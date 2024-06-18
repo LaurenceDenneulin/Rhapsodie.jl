@@ -40,7 +40,7 @@ where :
 
 """
 
-function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
     n1,n2 = size(x0)
     X0 = convert(Array{T,3},x0);
     μ=[hyperparameters(par[1], par[3]); 
@@ -50,14 +50,14 @@ function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, pa
     vfill!(view(lower_born,:,:,3:4),-Inf)
    
     g=vcreate(X0);
-    fg!(x,g) = apply_gradient!(TPolarimetricMap(x0.parameter_type, x), A, g, d, μ)
+    fg!(x,g) = apply_gradient!(TPolarimetricMap(x0.parameter_type, x), A, g, d, μ, α)
     x = vmlmb(fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return TPolarimetricMap(x0.parameter_type, x)
 end
 
 
 
-function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdata_table,1}, μ::Array{hyperparameters{T},1}) where {T <: AbstractFloat, D <:Mapping}
+function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdata_table,1}, μ::Array{hyperparameters{T},1}, α::Real) where {T <: AbstractFloat, D <:Mapping}
 
     n1, n2, n3 = size(g)
     @assert (n1,n2) == size(X)
@@ -99,57 +99,48 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
             end
         end 
  	    #f+=cost!(μ[1][2] , μ[1][1], X.Iu[:,:], view(g,:,:,1), false);
- 	    f+=apply_edge_preserving_smoothing!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ);
-        f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:4), μ[2].λ, μ[2].ρ)
+ 	    f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
+        f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:4), μ[2].λ, μ[2].ρ, α)
      elseif X.parameter_type == "stokes"
- 	    f+=apply_edge_preserving_smoothing!(X.I_star[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ);
-        f+=apply_edge_preserving_smoothing!(cat(X.I_disk[:,:], X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:4), μ[2].λ, μ[2].ρ)
+ 	    f+=apply_tikhonov!(X.I_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
+        f+=apply_edge_preserving_smoothing!(cat(X.I_disk[:,:], X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:4), μ[2].λ, μ[2].ρ, α)
  	    #f+=cost!(μ[1][2] , μ[1][1], X.I[:,:], view(g,:,:,1), false);    
      end
 	#f+=cost!(μ[2][2] , μ[2][1], cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), false);
 
 	return f
 end
-   
 
-function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
-                                   g::AbstractArray{T,2},
-                                   λ::Real, 
-                                   ρ::Real) where {T <: AbstractFloat}
+function apply_tikhonov!(x::AbstractArray{T,2},
+        g::AbstractArray{T,2},
+        λ::Real) where {T <: AbstractFloat}
     m,n = size(x)                               
     f = zero(T);
     r = zero(T);
-    μ = λ/(2*ρ);
     x1 = zero(T);
     x2 = zero(T);
-        
+
     for i=1:m-1
         for j=1:n-1
             x1= (x[i,j] - x[i+1,j])/2
             x2= (x[i,j] - x[i,j+1])/2
-            
-            ndx = x1^2 + x2^2;
-            r =  ndx + μ^2;
+            r = x1^2 + x2^2;
             ## Cost functon ##
-            f += λ*(√r -  μ);
-            if r>0
+            f += λ * r / 2;
                 ## Gradient in x ##
-                ∂r=2*√r;
-                g[i,j] += λ*(x1 + x2)/∂r;
-                g[i+1,j] -= λ*x1/∂r; 
-                g[i,j+1] -= λ*x2/∂r; 
-                
-             end
+                g[i,j] += λ*(x1 + x2);
+                g[i+1,j] -= λ*x1; 
+                g[i,j+1] -= λ*x2; 
         end
     end
-    
     return f
 end
 
 function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
                                    g::AbstractArray{T,3},
                                    λ::Real, 
-                                   ρ::Real) where {T <: AbstractFloat}
+                                   ρ::Real,
+                                   α::Real) where {T <: AbstractFloat}
     m,n = size(x)                               
     f = zero(T);
     r = zero(T);
@@ -161,25 +152,32 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
         
     for i=1:m-1
         for j=1:n-1
-            xQ1= (x[i,j,1] - x[i+1,j,1])/2
-            xQ2= (x[i,j,1] - x[i,j+1,1])/2
-            xU1= (x[i,j,2] - x[i+1,j,2])/2
-            xU2= (x[i,j,2] - x[i,j+1,2])/2
+            xIu1 = (x[i,j,1] - x[i+1,j,1])/2;
+            xIu2 = (x[i,j,1] - x[i,j+1,1])/2;
+            xQ1= (x[i,j,2] - x[i+1,j,2])/2
+            xQ2= (x[i,j,2] - x[i,j+1,2])/2
+            xU1= (x[i,j,3] - x[i+1,j,3])/2
+            xU2= (x[i,j,3] - x[i,j+1,3])/2
             
-            ndx = xQ1^2 + xQ2^2 + xU1^2 + xU2^2;
+            ndx = α * (xIu1^2 + xIu2^2) + xQ1^2 + xQ2^2 + xU1^2 + xU2^2;
             r =  ndx + μ^2;
             ## Cost functon ##
             f += λ*(√r -  μ);
             if r>0
                 ## Gradient in x ##
                 ∂r=2*√r;
-                g[i,j,1] += λ*(xQ1 + xQ2)/∂r;
-                g[i+1,j,1] -= λ*xQ1/∂r; 
-                g[i,j+1,1] -= λ*xQ2/∂r; 
                 
-                g[i,j,2] += λ*(xU1 + xU2)/∂r;
-                g[i+1,j,2] -= λ*xU1/∂r; 
-                g[i,j+1,2] -= λ*xU2/∂r; 
+                g[i,j,1] += λ* α *(xIu1 + xIu2)/∂r;
+                g[i+1,j,1] -= λ * α * xIu1/∂r; 
+                g[i,j+1,1] -= λ * α * xIu2/∂r; 
+                
+                g[i,j,2] += λ*(xQ1 + xQ2)/∂r;
+                g[i+1,j,2] -= λ*xQ1/∂r; 
+                g[i,j+1,2] -= λ*xQ2/∂r; 
+                
+                g[i,j,3] += λ*(xU1 + xU2)/∂r;
+                g[i+1,j,3] -= λ*xU1/∂r; 
+                g[i,j+1,3] -= λ*xU2/∂r; 
                 
              end
         end
@@ -187,71 +185,3 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
     
     return f
 end
-         
-         
-function apply_edge_preserving_smoothing!(x::AbstractArray{<:AbstractFloat},
-                                   g::AbstractArray{<:AbstractFloat}, 
-                                   hx::AbstractArray{<:AbstractFloat}, 
-                                   hλ::AbstractArray{<:AbstractFloat}, 
-                                   λ::Real, 
-                                   ρ::Real)
-    m,n = size(x)                               
-    f = zero(T);
-    r = zero(T);
-    ndx= zero(T);
-    ∂r= zero(T);
-    μ = λ/(2*ρ);
-    ∂μ = 2* μ^2; #is actually λ * ∂(μ²)/∂λ
-    x1 = zero(T);
-    x2 = zero(T);
-        
-    for i=1:m-1
-        for j=1:n-1
-            x1= (x[i,j] - x[i+1,j])/2
-            x2= (x[i,j] - x[i,j+1])/2
-            
-            ndx = x1^2 + x2^2;
-            r =  ndx + μ^2;
-            ## Cost functon ##
-            f += λ*(√r -  μ);
-            if r>0
-                ## Gradient in x ##
-                ∂r=2*√r;
-                g[i,j] += λ*(x1 + x2)/∂r;
-                g[i+1,j] -= λ*x1/∂r; 
-                g[i,j+1] -= λ*x2/∂r; 
-                
-                ## Hessian in x ##
-                ∂r *= 2*r;
-                
-                
-                hx[(j-1)*m+i,(j-1)*m+i] +=  λ*(2*μ^2 + (x1-x2)^2)/∂r; #∂g_{i,j}/∂x_{i,j} 
-                
-                hx[j*m+i, j*m+i] +=  λ*(μ^2 + x1^2)/∂r; #∂g_{i+1,j}/∂x_{i+1,j} 
-                
-                hx[(j-1)*m+i+1,(j-1)*m+i+1] +=  λ*(μ^2 + x2^2)/∂r; #∂g_{i,j+1}/∂x_{i,j+1} 
-                
-                hx[j*m+i,(j-1)*m+i] +=  λ*(-μ^2 - x1^2 +x1*x2)/∂r;
-                hx[(j-1)*m+i+1,(j-1)*m+i] +=  λ*(-μ^2 - x2^2 +x1*x2)/∂r;
-                
-                hx[(j-1)*m+i,j*m+i] +=  λ*(-μ^2 - x1^2 +x1*x2)/∂r;                
-                hx[(j-1)*m+i,(j-1)*m+i+1] +=  λ*(-μ^2 - x2^2 +x1*x2)/∂r;
-                
-                hx[j*m+i,(j-1)*m+i+1] +=  λ*(-x1*x2)/∂r;
-                hx[(j-1)*m+i+1,j*m+i] +=  λ*(-x1*x2)/∂r;
-
-                ## Hessian in λ ##
-                
-                ∂ndx = ndx + ∂μ;
-                ∂r /=∂ndx*2;
-                
-                hλ[i,j] +=  (x1 + x2)/∂r;
-                hλ[i+1,j] -= x1/∂r ;
-                hλ[i,j+1] -= x2/∂r ;
-             end
-        end
-    end
-    
-    return f
-end
-

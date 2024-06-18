@@ -48,12 +48,16 @@ function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::data_table) where {T
     return MSE,n
 end
 
-function MSE_object(x_est::Array{T,N}, x_true::Array{T,N}) where {T <: AbstractFloat,N}
-    MSE=0.0;
-    for i=1:size(x_est)[3]
-        MSE += vdot(x_est[:,:,i] - x_true[:,:,i],  x_est[:,:,i] - x_true[:,:,i]);
+function MSE_object(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
+    MSE = zeros(length(fieldnames(TPolarimetricMap)) - 1)
+    n_pixels = sum(get_MASK())
+    for (i, attr) in enumerate(fieldnames(TPolarimetricMap))
+        if i == 1 # Skipping field "parameter_type"
+            continue
+        end
+        MSE[i - 1] = vdot(getfield(x_est, attr) - getfield(x_true, attr), getfield(x_est, attr) - getfield(x_true, attr))
+        MSE[i - 1] /= n_pixels
     end
-    MSE = MSE^2
     return MSE
 end
 

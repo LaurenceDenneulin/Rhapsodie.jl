@@ -7,7 +7,7 @@ if prod(readdir() .!= "test_results")
     mkdir("test_results")
 end
 
-contrast = 1e-1
+contrast = 1e-2
 DSIZE=256;
 NTOT=64;
 Nframe=2;
@@ -25,15 +25,13 @@ end
 psf_center=readdlm("data_for_demo/PSF_centers_Airy.txt");
 Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, derotang=DerotAng)
 
-println()
-
 writedlm("data_for_demo/Parameters.txt", [DSIZE; NTOT; Nframe; Nrot; Center; 300; [10.7365 , -1.39344]]);
 
 psf = readfits("data_for_demo/PSF_parametered_Airy.fits");
 const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
 Iu_star_fits = readfits("data_for_demo/Iu_star.fits");
-Iu_star = view(Iu_star_fits, :, :, 1)
+Iu_star = view(Iu_star_fits, :, :, 1) * 50
 
 ddit_fits = readfits("data_for_demo/ddit_simulated_data.fits");
 I_disk = view(ddit_fits, :, :, 1)
@@ -52,7 +50,7 @@ Iu_star = Matrix(Iu_star)
 
 X0 = Rhapsodie.TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, scattering)
 
-GoodPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.9;
+GoodPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.99;
 
 data, weight, S, S_convolved = Rhapsodie.ddit_data_simulator(GoodPixMap, A, X0, ro_noise=8.5);
 

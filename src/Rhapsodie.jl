@@ -68,6 +68,7 @@ module Rhapsodie
     include("tgrad_tools.jl")
     include("loaders.jl")
     include("separable_methods.jl")
+    include("sure_tools.jl")
     include("rhapsodie_methods.jl")
     include("trhapsodie_methods.jl")
     include("datasimul_tools.jl")
