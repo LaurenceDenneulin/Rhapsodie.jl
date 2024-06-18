@@ -4,7 +4,7 @@ using EasyFITS
 
 #include("test_separable_reconstruction.jl")
 
-α=10.0
+α=10^-5
 par=readdlm("data_for_demo/Parameters.txt")
 DSIZE=Int64(par[1]);
 NTOT=Int64(par[2]);
