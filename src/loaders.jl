@@ -132,7 +132,7 @@ function load_parameters(size_data::NTuple{3,Int64},
     else
         push_to_trans_table(Id, epsilon, center, newcenter, derotang=derotang)
     end
-    SetCropOperator()
+    SetCropOperator(Star_Disk_Table)
 end
 
 function load_data(name_data, name_weight)

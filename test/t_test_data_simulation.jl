@@ -14,7 +14,10 @@ Nframe=2;
 Nrot=NTOT
 Nangle=NTOT ÷ (Nframe*4)
 Center=[DSIZE/2, DSIZE/2];
-DerotAng = deg2rad.(readdlm("data_for_demo/pds70_angles.txt", Float64)[1:64])
+# DerotAng = deg2rad.(readdlm("data_for_demo/pds70_angles.txt", Float64)[1:64])
+max_angle = 64
+DerotAng = [deg2rad(i) for i in range(1, max_angle, length=64)]
+
 Epsilon=Vector{Tuple{Array{Float64,1},Array{Float64,1}}}();
 
 for iter=1:NTOT
@@ -69,3 +72,4 @@ S = Rhapsodie.crop(S)
 
 Rhapsodie.write_polar_map(S_convolved, "test_results/TRUE_convolved.fits", overwrite=true)
 Rhapsodie.write_polar_map(S, "test_results/TRUE.fits", overwrite=true)
+writefits("test_results/MASK.fits", ["D" => ("Ok", "")], Rhapsodie.get_MASK()', overwrite=true)
