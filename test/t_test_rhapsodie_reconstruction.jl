@@ -38,8 +38,9 @@ X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
 regularisation_parameters = 10 .^[0,  -1. , -1, -3.] #(in log10) star, disk
 regularisation_parameters[1] = 0
 
-regularisation_parameter_list = [10^i for i in range(-5, -2, step=0.5)]
+regularisation_parameter_list = [10^i for i in range(-5, 1, length=128)]
 mse_list = Vector{Vector{Float64}}(undef, length(regularisation_parameter_list))
+
 
 for k=1:length(regularisation_parameter_list)
     println("------Iteration: ", k, "------")
