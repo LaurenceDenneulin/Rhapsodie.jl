@@ -56,10 +56,9 @@ function generate_model(S::PolarimetricMap, A::Mapping)
 	                                        get_par().v[k][1],
 	                                        get_par().v[k][2],
 	                                        T1,
-	                                        T2,
-	                                        A)
+	                                        T2)
 	    
-	    M[:,:,k].=F * cat(S.I, S.Q, S.U, dims=3);	    
+	    M[:,:,k].=F * cat(A*S.I, A*S.Q, A*S.U, dims=3);	    
 	end
     return M
 end

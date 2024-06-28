@@ -113,6 +113,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 function load_parameters(size_object::NTuple{2,Int64}, 
@@ -164,6 +165,7 @@ function load_parameters(size_object::NTuple{2,Int64},
         A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 
@@ -212,6 +214,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 function load_parameters(size_object::NTuple{2,Int64},
@@ -263,6 +266,7 @@ function load_parameters(size_object::NTuple{2,Int64},
         A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 function load_parameters(size_data::NTuple{3,Int64}, 
@@ -310,6 +314,7 @@ function load_parameters(size_data::NTuple{3,Int64},
         A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 
@@ -359,19 +364,19 @@ function load_parameters(size_data::NTuple{3,Int64},
         A_right=inv(TransRotate(Id, epsilon[k][2], derotang[k], center, newcenter))   
         push!(Trans_Table, (A_left, A_right))
     end
+	SetCropOperator()
 end
 
 
 
 
 function Load_Data(name_data, name_weight, name_psf)
-	data=read(FitsArray, name_data);
-	weight=read(FitsArray, name_weight);
-	psf=read(FitsArray, name_psf);
+	data=reafitsd(name_data);
+	weight=readfits(name_weight);
+	psf=readfits(name_psf);
 	A_l=set_fft_op((psf[1:end÷2,:]'[:,:]), get_par().psf_center[1]);
 	A_r=set_fft_op((psf[end÷2+1:end,:]'[:,:]), get_par().psf_center[1]);
 	ker= MyKer;
-	SetCropOperator()
     for k=1:size(data)[3]   
         output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size= get_par().cols[1:2];
@@ -391,10 +396,9 @@ function Load_Data(name_data, name_weight, name_psf)
 end
 
 function Load_Data(name_data, name_weight)
-	data=read(FitsArray, name_data);
-	weight=read(FitsArray, name_weight);
+	data=readfits( name_data);
+	weight=readfits( name_weight);
 	ker= MyKer;
-	SetCropOperator()
     for k=1:size(data)[3]   
         output_size=(get_par().rows[1], Int64(get_par().rows[2]/2));
         input_size= get_par().cols[1:2];
@@ -612,51 +616,7 @@ function apply!(α::Real,
     return dst;
 end
 
-
-#=
-function apply!(α::Real,
-                ::Type{LazyAlgebra.Direct},
-                R::FieldTransformOperator{T},
-                src::AbstractArray{T,3},
-                scratch::Bool,
-                β::Real,
-                dst::AbstractArray{T,2}) where {T<:AbstractFloat}
-                
-    @assert size(src) == R.cols
-    @assert size(dst) == R.rows
-    @assert β==0 && α==1
-    vfill!(dst,0);
-    
-    dst_left=zeros(R.cols[1:2]);
-    dst_right=zeros(R.cols[1:2]);
-    
-    for i=1:length(R.v_l)                                                     
-        dst_left .+=(R.v_l[i]*src[:,:,i]); 
-        dst_right .+=(R.v_r[i]*src[:,:,i]);   
-    end   
-    dst .+= [R.T_l*R.A_l*dst_left R.T_r*R.A_r*dst_right];
-    return dst                                                           
-end
-
-function apply!(α::Real,
-                ::Type{LazyAlgebra.Adjoint},
-                R::FieldTransformOperator{T},
-                src::AbstractArray{T,2},              
-                scratch::Bool,
-                β::Real,
-                dst::AbstractArray{T,3}) where {T<:AbstractFloat}
-    @assert β==0 && α==1                                                                                  
-    @assert size(src) == R.rows
-    @assert size(dst) == R.cols 
-    for i=1:length(R.v_l)                                                         
-        dst_left=R.A_l'*R.T_l'*(R.v_l[i]*src[:,1:end÷2]);
-        dst_right=R.A_r'*R.T_r'*(R.v_r[i]*src[:,end÷2+1:end]);
-        dst[:,:,i] = dst_left + dst_right;
-    end
-    return dst;
-end
-=#
-      
+  
 function mydot(x::AbstractArray{Tx,N},
                y::AbstractArray{Ty,N}) where {Tx<:AbstractFloat,Ty<:AbstractFloat,N}
     @assert axes(x) == axes(y)
@@ -670,7 +630,7 @@ end
 function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}) where {T<:AbstractFloat}
     local f::Float64 = 0.0;
     vfill!(g,0.0)
-    for k=1:length(dataset)
+    @inbounds for k=1:length(dataset)
         if sum(dataset[k].weights) !=0
             f += fg!(x, g, dataset[k])
         end
@@ -684,8 +644,8 @@ function fg!(x::AbstractArray{T,3},g::AbstractArray{T,3}, d::data_table{T}) wher
     r = d.H*x - d.data;
     wr = d.weights .* r;
     g .+= d.H'*wr;
-    #f = vdot(Float64, r,wr); #FIXME : mettre une issue !
-    f = mydot(r,wr);
+    f = vdot(T, r,wr); #FIXME : mettre une issue !
+    #f = mydot(r,wr);
     #crop!(g)
     return Float64(f)/2
 end       
@@ -699,32 +659,36 @@ function SetCropOperator()
     DSIZE=get_par().rows[1]
     MASK=ones(get_par().cols[1:2]);
     for k=1:length(Trans_Table)
-    X1=Trans_Table[k][1](1,1);
-    X2=Trans_Table[k][1](1,DSIZE);
-    X3=Trans_Table[k][1](DSIZE, DSIZE);
-    X4=Trans_Table[k][1](DSIZE, 1);
-    Mask1=zeros(get_par().cols[1:2]);
+        X11=Trans_Table[k][1](1,1);
+        X12=Trans_Table[k][1](1,DSIZE);
+        X13=Trans_Table[k][1](DSIZE, DSIZE);
+        X14=Trans_Table[k][1](DSIZE, 1);
+        
+        X21=Trans_Table[k][2](1,1);
+        X22=Trans_Table[k][2](1,DSIZE);
+        X23=Trans_Table[k][2](DSIZE, DSIZE);
+        X24=Trans_Table[k][2](DSIZE, 1);
+        Mask1=zeros(get_par().cols[1:2]);
+        Mask2=zeros(get_par().cols[1:2]);
 
-    for i=1:get_par().cols[1]
-	    for j=1:get_par().cols[2]	
-		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
-		    Mask1[i,j,:] .=1;
-		    end
-	    end
-    end
-    X1=Trans_Table[k][2](1,1);
-    X2=Trans_Table[k][2](1,DSIZE);
-    X3=Trans_Table[k][2](DSIZE, DSIZE);
-    X4=Trans_Table[k][2](DSIZE, 1);
-    Mask2=zeros(get_par().cols[1:2]);
-
-    for i=1:get_par().cols[1]
-	    for j=1:get_par().cols[2]	
-		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
-		    Mask2[i,j,:] .=1;
-		    end
-	    end
-    end
+        for i=1:get_par().cols[1]
+	        for j=1:get_par().cols[2]	
+	                H11 = ((i-X11[1])*(X12[1]-X11[1]) +(j-X11[2])*(X12[2]-X11[2]) >0)
+	                H12 = ((i-X12[1])*(X13[1]-X12[1]) +(j-X12[2])*(X13[2]-X12[2]) >0)
+	                H13 = ((i-X13[1])*(X14[1]-X13[1]) +(j-X13[2])*(X14[2]-X13[2]) >0)
+	                H14 = ((i-X14[1])*(X11[1]-X14[1]) +(j-X14[2])*(X11[2]-X14[2]) >0)	
+	                H21 = ((i-X21[1])*(X22[1]-X21[1]) +(j-X21[2])*(X22[2]-X21[2]) >0)
+	                H22 = ((i-X22[1])*(X23[1]-X22[1]) +(j-X22[2])*(X23[2]-X22[2]) >0)
+	                H23 = ((i-X23[1])*(X24[1]-X23[1]) +(j-X23[2])*(X24[2]-X23[2]) >0)
+	                H24 = ((i-X24[1])*(X21[1]-X24[1]) +(j-X24[2])*(X21[2]-X24[2]) >0)	
+		        if H11 && H12 && H13 && H14
+		            Mask1[i,j,:] .=1;
+		        end
+		        if H21 && H22 && H23 && H24
+		            Mask2[i,j,:] .=1;
+		        end
+	        end
+        end
     MASK .*= Mask1.*Mask2
     end
     #write(FitsFile, "MASK.fits", MASK, overwrite=true)
@@ -790,12 +754,13 @@ function crop!(X::PolarimetricMap{T})  where {T<:AbstractFloat}
 end        
         
 function pad(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}
-    X_size = size(X);
-    center_diff = X_size./2 .- get_par().cols[1:2]./2;
-    ker = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)    
-    Id = AffineTransform2D{Float64}()
-    center_change = translate(center_diff[1],center_diff[2], Id)   
-    PAD=TwoDimensionalTransformInterpolator(get_par().cols[1:2], X_size, ker, ker, center_change)
+#    X_size = size(X);
+#    center_diff = X_size./2 .- get_par().cols[1:2]./2;
+#    ker = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.Flat)    
+#    Id = AffineTransform2D{Float64}()
+#    center_change = translate(center_diff[1],center_diff[2], Id)   
+#    PAD=TwoDimensionalTransformInterpolator(get_par().cols[1:2], X_size, ker, ker, center_change)
+    PAD = ZeroPaddingOperator(get_par().cols[1:2], size(X)) 
     return PAD*X;
 end         
         

@@ -40,7 +40,7 @@ where :
 
 """
 
-function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(0.,1e-8), gtol=(0.,1e-8), ftol=(0.,1e-8)) where {T <: AbstractFloat, D <:Mapping}
     #par =  
 
     n1,n2 = size(x0)
@@ -55,8 +55,8 @@ function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par:
     vfill!(view(lower_born,:,:,2:3),-Inf)
    
     g=vcreate(X0);
-    fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), A, g, d, μ)
-    x = vmlmb(fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol);
+    rhapsodie_fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), A, g, d, μ)
+    x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol);
     return PolarimetricMap(x0.parameter_type,x)
 end
 
@@ -81,7 +81,7 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
     for k = 1:length(d)
         f += fg!(Ay, g, d[k])
     end
-
+    
     # Convert gradient w.r.t. y into gradient w.r.t. x.  Nothing has to be done
     # for the 2nd and 3rd fields (Q and U) or if Ip = 0.
     @assert size(g) == (n1,n2,3)
@@ -93,20 +93,19 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
         @inbounds for i2 in 1:n2
             for i1 in 1:n1
                 if X.Ip[i1,i2] > 0
-                    g[i1,i2,1] += (X.Q[i1,i2]*g[i1,i2,2] +
-                                   X.U[i1,i2]*g[i1,i2,3])/X.Ip[i1,i2]
+                    #g[i1,i2,1] += (X.Q[i1,i2]*g[i1,i2,2] +
+                    #               X.U[i1,i2]*g[i1,i2,3])/X.Ip[i1,i2]
+                    g[i1,i2,2] += X.Q[i1,i2]*g[i1,i2,1]/X.Ip[i1,i2]
+                    g[i1,i2,3] += X.U[i1,i2]*g[i1,i2,1]/X.Ip[i1,i2]                  
                 end
             end
         end 
- 	    #f+=cost!(μ[1][2] , μ[1][1], X.Iu[:,:], view(g,:,:,1), false);
  	    f+=apply_edge_preserving_smoothing!(X.Iu[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ);
      elseif X.parameter_type == "stokes"
  	    f+=apply_edge_preserving_smoothing!(X.I[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ)
- 	    #f+=cost!(μ[1][2] , μ[1][1], X.I[:,:], view(g,:,:,1), false);    
      end
     f+=apply_edge_preserving_smoothing!(cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), μ[2].λ, μ[2].ρ)
-	#f+=cost!(μ[2][2] , μ[2][1], cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), false);
-
+    
 	return f
 end
    

@@ -225,12 +225,12 @@ yields an empty
     Base.size(A::PolarimetricMap) = size(A.I)
     Base.length(A::PolarimetricMap) =prod(size(A))*3
     Base.length(A::PolarimetricPixel) =3
-    Base.getindex(X::PolarimetricMap, i::CartesianIndex{2}) where {N} =
-    PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
+    Base.getindex(X::PolarimetricMap, i::CartesianIndex{2}) =
+         PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
     Base.getindex(X::PolarimetricMap, i::Int) = 
-    PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
-    Base.getindex(X::PolarimetricMap, i::Int, j::Int) where {T<:Tuple} = 
-    getindex(X, CartesianIndex(i,j))
+        PolarimetricPixel(X.parameter_type, X.I[i], X.Q[i], X.U[i], X.Iu[i], X.Ip[i], X.θ[i])
+    Base.getindex(X::PolarimetricMap, i::Int, j::Int) = 
+        getindex(X, CartesianIndex(i,j))
 
     function Base.setindex!(X::PolarimetricMap{Float64}, x::PolarimetricPixel{Float64}, i::Int64, j::Int64)
         X.I[i,j]=x.I;
@@ -242,22 +242,36 @@ yields an empty
     end
         
 
-    +(x::PolarimetricMap, y::PolarimetricMap) = PolarimetricMap(x.parameter_type,
-                                                                x.I + y.I, 
-                                                                x.Q + y.Q, 
-                                                                x.U + y.U,
-                                                                x.Iu + y.Iu,
-                                                                x.Ip + y.Ip, 
-                                                                x.θ + y.θ)
-                                                                
+    function +(x::PolarimetricMap, y::PolarimetricMap) 
+        if x.parameter_type != y.parameter_type
+            @warn "x.parameter_type : "*x.parameter_type*" is different of y.parameter_type : "*y.parameter_type*". The result of the sum will be of parameter_type : "*x.parameter_type*"."
+        end
+        I = x.I + y.I;
+        Q = x.Q + y.Q;
+        U = x.U + y.U;
+        Ip = sqrt.(Q.^2 + U.^2)
+        Iu = I - Ip
+        θ = atan.(U,Q)/2
+        PolarimetricMap(x.parameter_type,I,Q,U,Iu,Ip,θ)
+    end                  
 
-     -(x::PolarimetricMap, y::PolarimetricMap) = PolarimetricMap(x.parameter_type,
-                                                                x.I - y.I, 
-                                                                x.Q - y.Q, 
-                                                                x.U - y.U,
-                                                                x.Iu - y.Iu,
-                                                                x.Ip - y.Ip, 
-                                                                x.θ - y.θ)
+
+     function -(x::PolarimetricMap, y::PolarimetricMap) 
+        if x.parameter_type != y.parameter_type
+            @warn "x.parameter_type : "*x.parameter_type*" is different of y.parameter_type : "*y.parameter_type*". The result of the sum will be of parameter_type : "*x.parameter_type*"."
+        end
+        I = x.I - y.I;
+        Q = x.Q - y.Q;
+        U = x.U - y.U;
+        Ip = sqrt.(Q.^2 + U.^2)
+        Iu = I - Ip
+        θ = atan.(U,Q)/2
+        
+        if minimum(I) < 0
+            @warn "Negative intensities in I"
+        end   
+        PolarimetricMap(x.parameter_type,I,Q,U,Iu,Ip,θ)
+    end
       
      vcopy(x::PolarimetricMap) = PolarimetricMap(x.parameter_type,
                                                  x.I, 
@@ -324,10 +338,11 @@ where X is a PolarimetricMap, write a fitsfile
 
 function write(X::PolarimetricMap, filename::AbstractString)
     data=cat(X.Iu', X.Ip', X.θ', X.I', X.Q', X.U',dims=3)
-    header=FitsHeader()#;MAPORDER = (2, "Iu, Ip, theta, I, Q, U"))
-    fitsdata=FitsImage(data)#, hdr=header)
-
-    write!(filename, fitsdata)
+ 
+    writefits(filename,
+              ["MAPORDER" => "Iu, Ip, Theta, I, Q, U"],
+              data,
+              overwrite=true)
 end
 
 """
@@ -342,7 +357,7 @@ create an object of type PolarimetricMap from a fits file with:
 
 
 function read(parameter_type::AbstractString, filename::AbstractString)
-    X=read(FitsArray, filename);
+    X=readfits(filename);
     return PolarimetricMap(parameter_type, 
                            view(X,:,:,4)', 
                            view(X,:,:,5)', 
