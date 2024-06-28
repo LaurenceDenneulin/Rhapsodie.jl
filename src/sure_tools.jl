@@ -56,7 +56,7 @@ function MSE_object(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
             continue
         end
         if i == 10 # Calculating circular MSE for theta field
-            MSE[i - 1] = sum(angle.(exp.((2 * im) .* (getfield(x_est, attr) - getfield(x_true, attr)))))
+            MSE[i - 1] = sum(angle.(exp.((2 * im) .* (getfield(x_est, attr) - getfield(x_true, attr)))) / 2)
             continue
         end
         MSE[i - 1] = vdot(getfield(x_est, attr) - getfield(x_true, attr), getfield(x_est, attr) - getfield(x_true, attr))
