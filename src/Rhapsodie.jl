@@ -64,5 +64,6 @@ module Rhapsodie
     include("separable_methods.jl")
     include("rhapsodie_methods.jl")
     include("datasimul_tools.jl")
+    include("sure_tools.jl")
 end
 

@@ -424,7 +424,7 @@ function Indices(S::Int64,Nrot::Int64,Nframe::Int64)
 #Nrot : Nombre de positions du derotateur
 #Nframe : Nombre de frame par positions de la lame demi-onde
 	
-	Nangle=Int32.(S/(Nrot*Nframe*4)) #Nombre de rotations de la lame demi-onde
+	Nangle=Int32.(S/(Nframe*4)) #Nombre de rotations de la lame demi-onde
 	INDICES=zeros(4,Nframe*Nangle*Nrot)
 	for i=1:4
 		ind=repeat(range(0,stop=4*Nframe*(Nrot*Nangle-1),length=Nrot*Nangle), inner=Nframe)+(Nframe*i .-mod.(range(1,stop=Nframe*Nangle*Nrot,length=Nframe*Nangle*Nrot),Nframe))

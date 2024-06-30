@@ -56,7 +56,7 @@ function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par:
    
     g=vcreate(X0);
     rhapsodie_fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), A, g, d, μ)
-    x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol);
+    x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return PolarimetricMap(x0.parameter_type,x)
 end
 
