@@ -4,7 +4,7 @@ using EasyFITS
 
 #include("test_separable_reconstruction.jl")
 
-max_iter = 100
+max_iter = 1000
 α=10^-5
 par=readdlm("data_for_demo/Parameters.txt")
 DSIZE=Int64(par[1]);
@@ -38,12 +38,15 @@ X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
 regularisation_parameters = 10 .^[0,  -1. , -1, -3.] #(in log10) star, disk
 regularisation_parameters[1] = 0
 
-regularisation_parameter_list = [10^i for i in range(-5, 1, length=128)]
+regularisation_parameter_list = [10^i for i in range(-5, 1, length=16)]
+
 mse_list = Vector{Vector{Float64}}(undef, length(regularisation_parameter_list))
 
 
 for k=1:length(regularisation_parameter_list)
     println("------Iteration: ", k, "------")
+    println("Regularisation parameter: ", regularisation_parameter_list[k])
+    
     regularisation_parameters[4] = regularisation_parameter_list[k]
     x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=α,
                         maxeval=1000, maxiter=max_iter);
