@@ -7,7 +7,8 @@ if prod(readdir() .!= "test_results")
     mkdir("test_results")
 end
 
-contrast_list = [i for i in range(-3, 0, step=0.5)]
+# contrast_list = [i for i in range(-3, 0, step=0.5)]
+contrast_list = [-2]
 DSIZE=256;
 NTOT=64;
 Nframe=2;

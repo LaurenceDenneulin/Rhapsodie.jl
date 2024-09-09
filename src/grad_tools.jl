@@ -45,36 +45,6 @@ struct data_table{T<:AbstractFloat, A<:FieldTransformOperator{T}} # Other types
     H::A
 end
 
-function Set_Vi(Indices::AbstractArray{Int64,2}; alpha=[0, pi/4, pi/8, 3*pi/8], psi=[0,pi/2])
-	J(a)=[cos(2*a) sin(2*a); sin(2*a) -cos(2*a)]
-	P(a)=[cos(a), -sin(a)]
-    v=Vector{NTuple{2, NTuple{3, Float64}}}(undef, length(Indices));
-	for i=1:4
-		v1=J(alpha[i])*P(psi[1])
-		vn1=norm(v1)^2;
-		v2=J(alpha[i])*P(psi[2])
-		vn2=norm(v2)^2;
-		for k=1:length(Indices[i,:])		
-		v[Indices[i,k]] =((round(vn1/2, digits=4), round((abs(v1[1])^2-abs(v1[2])^2)/2, digits=4), round(real(v1[1]*v1[2]), digits=4)),
-		                  (round(vn2/2, digits=4), round((abs(v2[1])^2-abs(v2[2])^2)/2, digits=4), round(real(v2[1]*v2[2]), digits=4)));
-        end
-	end
-	return v
-end
-
-function Set_Vi(Nframe::Int, dataset_length::Int, mueller_instru::AbstractArray{Float64,2})
-    @assert dataset_length == Nframe * size(mueller_instru)[1]
-    
-    v=Vector{NTuple{2, NTuple{3, Float64}}}(undef, dataset_length);
-    for k=1:size(mueller_instru)[1]
-        for l=1:Nframe
-            v[Nframe*(k-1) + l] =((mueller_instru[k,1], mueller_instru[k,2], mueller_instru[k,3]),
-                                  (mueller_instru[k,4], mueller_instru[k,5], mueller_instru[k,6]));
-        end
-    end
-	return v
-end
-
 
 function reset_instrument(V::Vector{NTuple{2, NTuple{3, T}}})  where {T <: AbstractFloat}
     push!(Parameters, parameters_table(get_par().cols, 
