@@ -21,12 +21,12 @@ const MyKer = LinearInterpolators.CatmullRomSpline(Float64, LinearInterpolators.
 # TODO : User should be able to select which kernel
 
 struct TFieldTransformOperator{T<:AbstractFloat, L<:Mapping, R<:Mapping} <: LinearMapping
-    cols::NTuple{3, Int} 
-    rows::NTuple{2, Int} 
+    cols::NTuple{3, Int}
+    rows::NTuple{2, Int}
     v_l::NTuple{3, T}
     v_r::NTuple{3, T}
-    H_l_star::L              
-    H_l_disk::L              
+    H_l_star::L
+    H_l_disk::L
     H_r_star::R
     H_r_disk::R
 end

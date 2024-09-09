@@ -4,7 +4,8 @@ using EasyFITS
 
 #include("test_separable_reconstruction.jl")
 
-max_iter = 1000
+contrast_list = [i for i in range(-1.5, 0, step=0.5)]
+max_iter = 700
 α=10^-5
 par=readdlm("data_for_demo/Parameters.txt")
 DSIZE=Int64(par[1]);
@@ -27,32 +28,37 @@ psf_center=readdlm("data_for_demo/PSF_centers_Airy.txt");
 
 Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, derotang=DerotAng)
 
-true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "test_results/TRUE.fits")
+mse_list = Vector{Float64}()
+for k in contrast_list
+    println("------Contrast parameter: ", k, "------")
+    true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "test_results/contrast_10e$(k)/TRUE.fits")
 
-Rhapsodie.load_data("test_results/DATA.fits", "test_results/WEIGHT.fits")
+    Rhapsodie.load_data("test_results/contrast_10e$(k)/DATA.fits", "test_results/contrast_10e$(k)/WEIGHT.fits")
 
-PSF=readfits("data_for_demo/PSF_parametered_Airy.fits");
-const A=set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
+    PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
+    A = set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
 
-X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
-regularisation_parameters = 10 .^[0,  -1. , -1, -3.] #(in log10) star, disk
-regularisation_parameters[1] = 0
-
-regularisation_parameter_list = [10^i for i in range(-5, 1, length=16)]
-
-mse_list = Vector{Vector{Float64}}(undef, length(regularisation_parameter_list))
+    X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
+    regularisation_parameters = 10 .^[0,  -1. , -1, -0.66] #(in log10) star, disk
+    regularisation_parameters[1] = 0
+    # regularisation_parameter_list = [10^i for i in range(-3, 0, length=10)]
+    regularisation_parameter_list = [10.0^-0.66]
 
 
-for k=1:length(regularisation_parameter_list)
-    println("------Iteration: ", k, "------")
-    println("Regularisation parameter: ", regularisation_parameter_list[k])
-    
-    regularisation_parameters[4] = regularisation_parameter_list[k]
+    if prod(readdir() .!= "test_results/contrast_10e$(k)/rhapsodie_method_results")     
+        mkdir("test_results/contrast_10e$(k)/rhapsodie_method_results")
+    end
+    if prod(readdir() .!= "test_results/contrast_10e$(k)/rhapsodie_method_results/max_iter_$(max_iter)")     
+        mkdir("test_results/contrast_10e$(k)/rhapsodie_method_results/max_iter_$(max_iter)")
+    end
+
+    # for i=1:length(regularisation_parameter_list)
+        # println("Regularisation parameter: ", regularisation_parameter_list[i])
+    regularisation_parameters[4] = regularisation_parameter_list[1]
     x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=α,
                         maxeval=1000, maxiter=max_iter);
     crop!(x)
-    write_polar_map(x, "test_results/rhapsodie_method_results/max_iter_$(max_iter)/RHAPSODIE_non_linear_results_regul_param_$(regularisation_parameter_list[k]).fits", overwrite=true)
-    mse_list[k] = Rhapsodie.MSE_object(x, true_polar_map)
-    println("MSE: ", mse_list[k])
+    write_polar_map(x, "test_results/contrast_10e$(k)/rhapsodie_method_results/max_iter_$(max_iter)/RHAPSODIE_non_linear_results_regul_param_$(regularisation_parameter_list[1]).fits", overwrite=true)
+    append!(mse_list, Rhapsodie.MSE_object(x, true_polar_map))
 end
-writedlm("test_results/rhapsodie_method_results/max_iter_$(max_iter)/mse_list.txt", mse_list)
+writedlm("test_results/mse_list.txt", mse_list)

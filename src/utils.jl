@@ -1,24 +1,37 @@
 function SetCropOperator(table::Vector{NTuple{N, AffineTransform2D}}) where {N}
     DSIZE=get_par().rows[1]
-    Mask=zeros(get_par().cols[1:2]);
+    MASK=ones(get_par().cols[1:2]);
     for k=1:length(table)
-        for l=1:N
-            X1=table[k][l](1,1);
-            X2=table[k][l](1,DSIZE);
-            X3=table[k][l](DSIZE, DSIZE);
-            X4=table[k][l](DSIZE, 1);
+    X1=table[k][1](1,1);
+    X2=table[k][1](1,DSIZE);
+    X3=table[k][1](DSIZE, DSIZE);
+    X4=table[k][1](DSIZE, 1);
+    Mask1=zeros(get_par().cols[1:2]);
 
-            for i=1:get_par().cols[1]
-                for j=1:get_par().cols[2]	
-                    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
-                        Mask[i,j] = 1;
-                    end
-                end
-            end
-        end
+    for i=1:get_par().cols[1]
+	    for j=1:get_par().cols[2]	
+		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
+		    Mask1[i,j,:] .=1;
+		    end
+	    end
+    end
+    X1=table[k][2](1,1);
+    X2=table[k][2](1,DSIZE);
+    X3=table[k][2](DSIZE, DSIZE);
+    X4=table[k][2](DSIZE, 1);
+    Mask2=zeros(get_par().cols[1:2]);
+
+    for i=1:get_par().cols[1]
+	    for j=1:get_par().cols[2]	
+		    if ((i-X1[1])*(X2[1]-X1[1]) +(j-X1[2])*(X2[2]-X1[2]) >0)&&((i-X2[1])*(X3[1]-X2[1]) +(j-X2[2])*(X3[2]-X2[2]) >0)&&((i-X3[1])*(X4[1]-X3[1]) +(j-X3[2])*(X4[2]-X3[2]) >0) &&((i-X4[1])*(X1[1]-X4[1]) +(j-X4[2])*(X1[2]-X4[2]) >0)	
+		    Mask2[i,j,:] .=1;
+		    end
+	    end
+    end
+    MASK .*= Mask1.*Mask2
     end
     #write(FitsFile, "MASK.fits", MASK, overwrite=true)
-    push!(MASK_save, Mask)
+    push!(MASK_save, MASK)
 end
 
 function crop(X::M)  where {T<:AbstractFloat, M<:AbstractArray{T,2}}

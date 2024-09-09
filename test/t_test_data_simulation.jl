@@ -7,7 +7,7 @@ if prod(readdir() .!= "test_results")
     mkdir("test_results")
 end
 
-contrast = 1e-2
+contrast_list = [i for i in range(-3, 0, step=0.5)]
 DSIZE=256;
 NTOT=64;
 Nframe=2;
@@ -34,42 +34,51 @@ psf = readfits("data_for_demo/PSF_parametered_Airy.fits");
 const A=set_fft_op((psf[1:end÷2,:]'), get_par().psf_center[1]);
 
 Iu_star_fits = readfits("data_for_demo/Iu_star.fits");
-Iu_star = view(Iu_star_fits, :, :, 1) * 50
+Iu_star_original = view(Iu_star_fits, :, :, 1) * 50
 
 ddit_fits = readfits("data_for_demo/ddit_simulated_data.fits");
-I_disk = view(ddit_fits, :, :, 1)
+I_disk_original = view(ddit_fits, :, :, 1)
 
-normalization_term = contrast * maximum(Iu_star) / maximum(I_disk)
+for k in contrast_list
+    if prod(readdir() .!= "test_results/contrast_10e$(k)")     
+        mkdir("test_results/contrast_10e$(k)")
+    end
+    Iu_star = Iu_star_original
+    I_disk = I_disk_original
 
-I_disk .*= normalization_term
+    contrast = 10.0^k
+    normalization_term = contrast * maximum(Iu_star) / maximum(I_disk)
 
-Ip_disk = ddit_fits[:,:,2]
-Ip_disk .*= normalization_term
-scattering = ddit_fits[:,:,3]
+    I_disk .*= normalization_term
 
-Iu_disk = I_disk - Ip_disk
+    Ip_disk = ddit_fits[:,:,2]
+    Ip_disk .*= normalization_term
+    scattering = ddit_fits[:,:,3]
 
-Iu_star = Matrix(Iu_star)
+    Iu_disk = I_disk - Ip_disk
 
-X0 = Rhapsodie.TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, scattering)
+    Iu_star = Matrix(Iu_star)
 
-GoodPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.99;
+    X0 = Rhapsodie.TPolarimetricMap("intensities", Iu_star, Iu_disk, Ip_disk, scattering)
 
-data, weight, S, S_convolved = Rhapsodie.ddit_data_simulator(GoodPixMap, A, X0, ro_noise=8.5);
+    GoodPixMap = rand(0.0:1e-16:1.0,(DSIZE, 2*DSIZE)).< 0.99;
 
-writefits("test_results/mask.fits", ["DATE" => (now(), "date of creation")], Rhapsodie.get_MASK(), overwrite=true)
+    data, weight, S, S_convolved = Rhapsodie.ddit_data_simulator(GoodPixMap, A, X0, ro_noise=8.5);
 
-writefits("test_results/DATA.fits",
-["DATE" => (now(), "date of creation")],
-mapslices(transpose,data,dims=[1,2]), overwrite=true)
+    writefits("test_results/contrast_10e$(k)/mask.fits", ["DATE" => (now(), "date of creation")], Rhapsodie.get_MASK(), overwrite=true)
 
-writefits("test_results/WEIGHT.fits",
-["DATE" => (now(), "date of creation")],
-mapslices(transpose,weight,dims=[1,2]), overwrite=true)
+    writefits("test_results/contrast_10e$(k)/DATA.fits",
+    ["DATE" => (now(), "date of creation")],
+    mapslices(transpose,data,dims=[1,2]), overwrite=true)
 
-S_convolved = Rhapsodie.crop(S_convolved)
-S = Rhapsodie.crop(S)
+    writefits("test_results/contrast_10e$(k)/WEIGHT.fits",
+    ["DATE" => (now(), "date of creation")],
+    mapslices(transpose,weight,dims=[1,2]), overwrite=true)
 
-Rhapsodie.write_polar_map(S_convolved, "test_results/TRUE_convolved.fits", overwrite=true)
-Rhapsodie.write_polar_map(S, "test_results/TRUE.fits", overwrite=true)
-writefits("test_results/MASK.fits", ["D" => ("Ok", "")], Rhapsodie.get_MASK()', overwrite=true)
+    S_convolved = Rhapsodie.crop(S_convolved)
+    S = Rhapsodie.crop(S)
+
+    Rhapsodie.write_polar_map(S_convolved, "test_results/contrast_10e$(k)/TRUE_convolved.fits", overwrite=true)
+    Rhapsodie.write_polar_map(S, "test_results/contrast_10e$(k)/TRUE.fits", overwrite=true)
+    writefits("test_results/contrast_10e$(k)/MASK.fits", ["D" => ("Ok", "")], Rhapsodie.get_MASK()', overwrite=true)
+end
