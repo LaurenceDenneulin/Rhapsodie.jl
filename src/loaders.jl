@@ -158,3 +158,7 @@ function load_data(name_data, name_weight)
                                             T_r_disk)));
     end
 end
+
+function flush_dataset()
+    empty!(dataset)
+end

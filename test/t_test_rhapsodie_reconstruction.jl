@@ -4,7 +4,8 @@ using EasyFITS
 
 #include("test_separable_reconstruction.jl")
 
-contrast_list = [i for i in range(-1.5, 0, step=0.5)]
+# contrast_list = [i for i in range(-1.5, 0, step=0.5)]
+contrast_list = [-2.0]
 max_iter = 700
 α=10^-5
 par=readdlm("data_for_demo/Parameters.txt")
@@ -60,5 +61,6 @@ for k in contrast_list
     crop!(x)
     write_polar_map(x, "test_results/contrast_10e$(k)/rhapsodie_method_results/max_iter_$(max_iter)/RHAPSODIE_non_linear_results_regul_param_$(regularisation_parameter_list[1]).fits", overwrite=true)
     append!(mse_list, Rhapsodie.MSE_object(x, true_polar_map))
+    empty!(Rhapsodie.dataset)
 end
 writedlm("test_results/mse_list.txt", mse_list)
