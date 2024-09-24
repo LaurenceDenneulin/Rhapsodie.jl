@@ -7,8 +7,8 @@ if prod(readdir() .!= "test_results")
     mkdir("test_results")
 end
 
-# contrast_list = [i for i in range(-3, 0, step=0.5)]
-contrast_list = [-2]
+contrast_list = [i for i in range(-3, 0, step=0.5)]
+# contrast_list = [-2]
 DSIZE=256;
 NTOT=64;
 Nframe=2;
@@ -41,11 +41,11 @@ ddit_fits = readfits("data_for_demo/ddit_simulated_data.fits");
 I_disk_original = view(ddit_fits, :, :, 1)
 
 for k in contrast_list
-    if prod(readdir() .!= "test_results/contrast_10e$(k)")     
+    if prod(readdir() .!= "test_results/contrast_10e$(k)")   
         mkdir("test_results/contrast_10e$(k)")
     end
-    Iu_star = Iu_star_original
-    I_disk = I_disk_original
+    Iu_star = copy(Iu_star_original)
+    I_disk = copy(I_disk_original)
 
     contrast = 10.0^k
     normalization_term = contrast * maximum(Iu_star) / maximum(I_disk)
