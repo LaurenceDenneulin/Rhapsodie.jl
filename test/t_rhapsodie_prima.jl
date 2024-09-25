@@ -43,6 +43,6 @@ function calculate_MSE_for_prima(X::Vector{Float64})
 end
 writedlm("test_results/prima/mse_list.txt", mse_list)
 
-optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-0.66, -5.], rhobeg=4, rhoend=1e-2, maxfun=100)
+optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-0.66, -5.], rhobeg=4, rhoend=1e-2, maxfun=1)
 println("Optimal hyperparameters lambda, alpha: ", optimal_hyperparams[1], optimal_hyperparams[2])
 println("Info: ", info)
