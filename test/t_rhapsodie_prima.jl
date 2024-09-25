@@ -23,7 +23,7 @@ psf_center=readdlm("data_for_demo/PSF_centers_Airy.txt");
 Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, derotang=DerotAng)
 
 
-root_path = "test_results/contrast_1e-2/"
+root_path = "test_results/contrast_10e-2/"
 
 Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
