@@ -23,26 +23,34 @@ psf_center=readdlm("data_for_demo/PSF_centers_Airy.txt");
 Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, (psf_center[1:2], psf_center[3:4]), Epsilon, derotang=DerotAng)
 
 
-root_path = "test_results/contrast_10e-2/"
-
-Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
 A = set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
 mse_list = Vector{Float64}()
-function calculate_MSE_for_prima(X::Vector{Float64})
-    λ, α = X
-    regularisation_parameters = 10 .^[0,  -1. , -1, λ]
-    X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
-    x_est = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=10^α, maxeval=1000, maxiter=1000)
-    true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "$(root_path)TRUE.fits")
-    crop!(x_est)
-    write_polar_map(x_est, "test_results/prima/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
-    curr_mse = Rhapsodie.MSE_object(x_est, true_polar_map)
-    append!(mse_list, [λ; α; curr_mse])
-    return sum(curr_mse[8:9])
-end
-writedlm("test_results/prima/mse_list.txt", mse_list)
+header = Vector{Vector{String}}()
+push!(header, ["λ", "α", "contrast"])
+writedlm("test_results/prima/mse_list.txt", header, ',')
 
-optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-0.66, -5.], rhobeg=4, rhoend=1e-2, maxfun=1)
-println("Optimal hyperparameters lambda, alpha: ", optimal_hyperparams[1], optimal_hyperparams[2])
-println("Info: ", info)
+open("test_results/prima/mse_list.txt", "a") do io
+    for k in range(-3, 0, step=0.5)
+        root_path = "test_results/contrast_10e$(k)/"
+        Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
+
+        function calculate_MSE_for_prima(X::Vector{Float64})
+            λ, α = X
+            regularisation_parameters = 10 .^[0,  -1. , -1, λ]
+            X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
+            x_est = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=10^α, maxeval=1000, maxiter=1000)
+            true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "$(root_path)TRUE.fits")
+            crop!(x_est)
+            write_polar_map(x_est, "test_results/prima/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
+            curr_mse = Rhapsodie.MSE_object(x_est, true_polar_map)
+            append!(mse_list, [λ; α; curr_mse])
+            return sum(curr_mse[8:9])
+        end
+
+        optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-0.66, -5.], rhobeg=4, rhoend=1e-2, maxfun=1)
+        writedlm(io, mse_list, ',')
+        println("Optimal hyperparameters lambda, alpha: ", optimal_hyperparams[1], optimal_hyperparams[2])
+        println("Info: ", info)
+    end
+end

@@ -41,7 +41,8 @@ module Rhapsodie
         Linear_Method,
         NonLinear_Method,
         apply_rhapsodie,
-        apply_edge_preserving_smoothing!
+        apply_edge_preserving_smoothing!,
+        MSE_object
 
     import Base: +, -, *, /, ==, getindex, setindex!, read, write, convert
 

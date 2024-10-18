@@ -31,7 +31,7 @@
 function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::Array{data_table,1}) where {T <: AbstractFloat,N}
     MSE=0.0;
     n=0;
-    for  data in d
+    for data in d
         res = MSE_data(x_est, x_true, data)
         MSE +=res[1];
         n += res[2];
@@ -55,12 +55,12 @@ function MSE_object(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
         if i == 1 # Skipping field "parameter_type"
             continue
         end
-        if i == 10 # Calculating circular MSE for theta field
-            MSE[i - 1] = sum(angle.(exp.((2 * im) .* (getfield(x_est, attr) - getfield(x_true, attr)))) / 2)
+        if i == 11 # Calculating circular MSE for theta field
+            MSE[i - 1] = rad2deg(vnorm2(angle.(exp.(im*2*(x_est.θ - x_true.θ))).*get_MASK()/2)/n_pixels)
             continue
         end
         MSE[i - 1] = vdot(getfield(x_est, attr) - getfield(x_true, attr), getfield(x_est, attr) - getfield(x_true, attr))
-        MSE[i - 1] /= n_pixels
+        MSE[i - 1] /= vdot(getfield(x_true, attr), getfield(x_true, attr))
     end
     return MSE
 end
