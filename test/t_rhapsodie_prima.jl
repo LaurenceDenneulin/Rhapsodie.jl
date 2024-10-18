@@ -32,6 +32,10 @@ writedlm("test_results/prima/mse_list.txt", header, ',')
 
 open("test_results/prima/mse_list.txt", "a") do io
     for k in range(-3, 0, step=0.5)
+
+        if prod(readdir() .!= "test_results/prima/contrast_10e$(k)")   
+            mkdir("test_results/prima/contrast_10e$(k)")
+
         root_path = "test_results/contrast_10e$(k)/"
         Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
@@ -42,7 +46,7 @@ open("test_results/prima/mse_list.txt", "a") do io
             x_est = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=10^α, maxeval=1000, maxiter=1000)
             true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "$(root_path)TRUE.fits")
             crop!(x_est)
-            write_polar_map(x_est, "test_results/prima/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
+            write_polar_map(x_est, "test_results/prima/contrast_10e$(k)/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
             curr_mse = Rhapsodie.MSE_object(x_est, true_polar_map)
             append!(mse_list, [λ; α; curr_mse])
             return sum(curr_mse[8:9])
