@@ -31,14 +31,16 @@ push!(header, ["λ", "α", "contrast"])
 writedlm("test_results/prima/mse_list.txt", header, ',')
 
 for k in range(-3, 0, step=0.5)
-    if prod(readdir() .!= "test_results/prima/contrast_10e$(k)")   
-        mkdir("test_results/prima/contrast_10e$(k)")
+    root_path = "test_results/contrast_10e$(k)/"
+    dir_path = "test_results/prima/contrast_10e$(k)"
+    if !isdir(dir_path)
+        mkdir(dir_path)
     end
-    if prod(readdir() .!= "test_results/prima/contrast_10e$(k)/mse_list.txt")   
-        mkdir("test_results/prima/contrast_10e$(k)/mse_list.txt")
+    file_path = "$(dir_path)/mse_list.txt"
+    if !isfile(file_path)
+        touch(file_path)
     end
-    open("test_results/prima/contrast_10e$(k)/mse_list.txt", "a") do io
-        root_path = "test_results/contrast_10e$(k)/"
+    open(file_path, "a") do io
         Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
         function calculate_MSE_for_prima(X::Vector{Float64})
