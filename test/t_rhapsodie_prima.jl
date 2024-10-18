@@ -30,12 +30,12 @@ header = Vector{Vector{String}}()
 push!(header, ["λ", "α", "contrast"])
 writedlm("test_results/prima/mse_list.txt", header, ',')
 
-open("test_results/prima/mse_list.txt", "a") do io
     for k in range(-3, 0, step=0.5)
+    open("test_results/prima/contrast_10e$(k)/mse_list.txt", "a") do io
 
         if prod(readdir() .!= "test_results/prima/contrast_10e$(k)")   
             mkdir("test_results/prima/contrast_10e$(k)")
-
+        end
         root_path = "test_results/contrast_10e$(k)/"
         Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
