@@ -27,7 +27,7 @@ PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
 A = set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
 mse_list = Vector{Vector{Float64}}()
 header = Vector{Vector{String}}()
-push!(header, ["λ", "α", "contrast"])
+push!(header, ["λ", "α", "contrast, Iu_disk_mse", "Ip_disk_mse", "theta_mse"])
 
 open("test_results/prima/mse_list.txt", "w") do io
     writedlm(io, header, ',')
@@ -49,7 +49,8 @@ open("test_results/prima/mse_list.txt", "w") do io
                 crop!(x_est)
                 write_polar_map(x_est, "test_results/prima/contrast_10e$(k)/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
                 curr_mse = Rhapsodie.MSE_object(x_est, true_polar_map)
-                push!(mse_list, [λ, α, k, curr_mse])
+                mse_entry = [λ, α, k, curr_mse[8], curr_mse[9], curr_mse[10]]
+                push!(mse_list, [λ, α, k, mse_entry])
                 return sum(curr_mse[8:9])
             end
 
