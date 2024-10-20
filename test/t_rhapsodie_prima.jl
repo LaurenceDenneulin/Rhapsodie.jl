@@ -40,7 +40,7 @@ open("test_results/prima/mse_list.txt", "w") do io
         end
         Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
-            function calculate_MSE_for_prima(X::Vector{Any})
+            function calculate_MSE_for_prima(X::Vector{Float64})
                 λ, α = X
                 regularisation_parameters = 10 .^[0,  -1. , -1, λ]
                 X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
