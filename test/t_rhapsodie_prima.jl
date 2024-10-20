@@ -25,7 +25,7 @@ Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot, Nangle, Center, 
 
 PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
 A = set_fft_op(PSF[1:end÷2,:]'[:,:],psf_center[1:2]);
-mse_list = Vector{Vector{Float64}}()
+mse_list = Vector{Vector{Any}}()
 header = Vector{Vector{String}}()
 push!(header, ["λ", "α", "contrast, Iu_disk_mse", "Ip_disk_mse", "theta_mse"])
 
@@ -40,7 +40,7 @@ open("test_results/prima/mse_list.txt", "w") do io
         end
         Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
-            function calculate_MSE_for_prima(X::Vector{Float64})
+            function calculate_MSE_for_prima(X::Vector{Any})
                 λ, α = X
                 regularisation_parameters = 10 .^[0,  -1. , -1, λ]
                 X0 = TPolarimetricMap("mixed", zeros(Rhapsodie.get_par().cols));
