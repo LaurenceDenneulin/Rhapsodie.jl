@@ -40,7 +40,7 @@ where :
 
 """
 
-function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8); regul_type::String="struct") where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8), regul_type::String="struct") where {T <: AbstractFloat, D <:Mapping}
     n1,n2 = size(x0)
     parameter_type = x0.parameter_type
     X0 = convert(Array{T,3}, x0);
