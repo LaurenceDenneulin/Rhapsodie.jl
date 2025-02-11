@@ -40,7 +40,7 @@ where :
 
 """
 
-function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8)) where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8); regul_type::String="struct") where {T <: AbstractFloat, D <:Mapping}
     n1,n2 = size(x0)
     parameter_type = x0.parameter_type
     X0 = convert(Array{T,3}, x0);
@@ -60,14 +60,14 @@ function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, pa
         vfill!(view(upper_born,:,:,1:4),Inf)
     end
     g=vcreate(X0);
-    rhapsodie_fg!(x,g) = apply_gradient!(TPolarimetricMap(parameter_type, x), A, g, d, μ, α)
+    rhapsodie_fg!(x,g) = apply_gradient!(TPolarimetricMap(parameter_type, x), A, g, d, μ, α, regul_type)
     x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, upper=upper_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return TPolarimetricMap(x0.parameter_type, x)
 end
 
 
 
-function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdata_table,1}, μ::Array{hyperparameters{T},1}, α::Real) where {T <: AbstractFloat, D <:Mapping}
+function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdata_table,1}, μ::Array{hyperparameters{T},1}, α::Real, regul_type::String) where {T <: AbstractFloat, D <:Mapping}
 
     n1, n2, n3 = size(g)
     @assert (n1,n2) == size(X)
@@ -115,13 +115,38 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
                 end
             end
         end
-        tmp_grad = zeros(T, n1, n2)
+        
  	    #f+=cost!(μ[1][2] , μ[1][1], X.Iu[:,:], view(g,:,:,1), false);
- 	    f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
-        f+=apply_edge_preserving_smoothing!(X.Iu_disk[:,:], view(g,:,:,2), μ[2].λ, μ[2].ρ)
-        f+=apply_edge_preserving_smoothing!(X.Ip_disk[:,:], tmp_grad, μ[3].λ, μ[3].ρ)
-        g[:,:,3] .+= X.Q .* tmp_grad ./ X.Ip_disk
-        g[:,:,4] .+= X.U .* tmp_grad ./ X.Ip_disk
+
+        # Struct regularization
+        if regul_type == "struct"
+            tmp_grad = zeros(T, n1, n2, 2)
+            f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
+            f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Ip_disk[:,:], dims=3), tmp_grad, μ[2].λ, μ[2].ρ; α=α)
+            f+=apply_struct_regul!(X.Iu_disk, view(tmp_grad,:,:,1), μ[3].λ * α)
+            f+=apply_struct_regul!(X.Ip_disk, view(tmp_grad,:,:,2), μ[3].λ)
+            g[:,:,2] .+= tmp_grad[:,:,1]
+            g[:,:,3] .+= X.Q .* tmp_grad[:,:,2] ./ X.Ip_disk
+            g[:,:,4] .+= X.U .* tmp_grad[:,:,2] ./ X.Ip_disk
+
+        # Joint regularization
+        elseif regul_type == "joint"
+            tmp_grad = zeros(T, n1, n2, 2)
+            f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
+            f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Ip_disk[:,:], dims=3), tmp_grad, μ[2].λ, μ[2].ρ; α=α)
+            g[:,:,2] .+= tmp_grad[:,:,1]
+            g[:,:,3] .+= X.Q .* tmp_grad[:,:,2] ./ X.Ip_disk
+            g[:,:,4] .+= X.U .* tmp_grad[:,:,2] ./ X.Ip_disk
+        
+        # Disjoint regularization
+        elseif regul_type == "disjoint"
+            tmp_grad = zeros(T, n1, n2)
+            f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
+            f+=apply_edge_preserving_smoothing!(X.Iu_disk[:,:], view(g,:,:,2), μ[2].λ, μ[2].ρ)
+            f+=apply_edge_preserving_smoothing!(X.Ip_disk[:,:], tmp_grad, μ[3].λ, μ[3].ρ)
+            g[:,:,3] .+= X.Q .* tmp_grad ./ X.Ip_disk
+            g[:,:,4] .+= X.U .* tmp_grad ./ X.Ip_disk
+        end
 
     elseif X.parameter_type == "stokes" # Basis under the form (Iu_star, Iu_disk, Q, U)
  	    f+=apply_tikhonov!(X.I_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
@@ -131,6 +156,17 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
 	#f+=cost!(μ[2][2] , μ[2][1], cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), false);
 
 	return f
+end
+
+function apply_struct_regul!(x::AbstractArray{T,2},
+        g::AbstractArray{T,2},
+        λ::Real) where {T <: AbstractFloat}
+    for i in 1:size(x, 1)
+        for j in 1:size(x, 2)
+            g[i, j] += λ
+        end
+    end
+    return sum(abs, x) * λ
 end
 
 function apply_tikhonov!(x::AbstractArray{T,2},
@@ -209,8 +245,7 @@ end
 function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
     g::AbstractArray{T,2},
     λ::Real,
-    ρ::Real;
-    α=1.0) where {T <: AbstractFloat}
+    ρ::Real) where {T <: AbstractFloat}
 
     m, n = size(x)
     f = zero(T)
@@ -225,7 +260,6 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
             x2 = (x[i, j] - x[i, j+1]) / 2
 
             nrm = x1^2 + x2^2
-            nrm *= α
 
             r = nrm + μ^2
             ## Cost function ##
@@ -239,57 +273,5 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
             end
         end
     end
-
     return f
 end
-#=
-function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
-                                   g::AbstractArray{T,3},
-                                   λ::Real, 
-                                   ρ::Real,
-                                   α::Real) where {T <: AbstractFloat}
-    m,n = size(x)                               
-    f = zero(T);
-    r = zero(T);
-    μ = λ/(2*ρ);
-    xQ1 = zero(T);
-    xQ2 = zero(T);
-    xU1 = zero(T);
-    xU2 = zero(T);
-        
-    for i=1:m-1
-        for j=1:n-1
-            xIu1 = (x[i,j,1] - x[i+1,j,1])/2;
-            xIu2 = (x[i,j,1] - x[i,j+1,1])/2;
-            xQ1= (x[i,j,2] - x[i+1,j,2])/2
-            xQ2= (x[i,j,2] - x[i,j+1,2])/2
-            xU1= (x[i,j,3] - x[i+1,j,3])/2
-            xU2= (x[i,j,3] - x[i,j+1,3])/2
-            
-            ndx = α * (xIu1^2 + xIu2^2) + xQ1^2 + xQ2^2 + xU1^2 + xU2^2;
-            r =  ndx + μ^2;
-            ## Cost functon ##
-            f += λ*(√r -  μ);
-            if r>0
-                ## Gradient in x ##
-                ∂r=2*√r;
-                
-                g[i,j,1] += λ* α *(xIu1 + xIu2)/∂r;
-                g[i+1,j,1] -= λ * α * xIu1/∂r; 
-                g[i,j+1,1] -= λ * α * xIu2/∂r; 
-                
-                g[i,j,2] += λ*(xQ1 + xQ2)/∂r;
-                g[i+1,j,2] -= λ*xQ1/∂r; 
-                g[i,j+1,2] -= λ*xQ2/∂r; 
-                
-                g[i,j,3] += λ*(xU1 + xU2)/∂r;
-                g[i+1,j,3] -= λ*xU1/∂r; 
-                g[i,j+1,3] -= λ*xU2/∂r; 
-                
-             end
-        end
-    end
-    
-    return f
-end
-=#

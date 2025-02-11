@@ -192,10 +192,10 @@ yields an empty
 
         @assert n3 == 4
         TPolarimetricMap(parameter_type, 
-                        view(x, :, :, 1),
-                        view(x, :, :, 2),
-                        view(x, :, :, 3),
-                        view(x, :, :, 4));
+                        copy(x[:,:,1]),
+                        copy(x[:,:,2]),
+                        copy(x[:,:,3]),
+                        copy(x[:,:,4]));
     end
     
     function TPolarimetricMap(parameter_type::AbstractString, n1::Int, n2::Int)
