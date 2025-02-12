@@ -40,7 +40,7 @@ where :
 
 """
 
-function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8), regul_type::String="struct") where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, α::Real=1, xtol=(1e-3,1e-8), gtol=(1e-3,1e-8), ftol=(1e-3,1e-8), regul_type::String="struct", verbose::Bool=false) where {T <: AbstractFloat, D <:Mapping}
     n1,n2 = size(x0)
     parameter_type = x0.parameter_type
     X0 = convert(Array{T,3}, x0);
@@ -61,7 +61,7 @@ function apply_rhapsodie(x0::TPolarimetricMap, A::D, d::Array{Tdata_table,1}, pa
     end
     g=vcreate(X0);
     rhapsodie_fg!(x,g) = apply_gradient!(TPolarimetricMap(parameter_type, x), A, g, d, μ, α, regul_type)
-    x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, upper=upper_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
+    x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, upper=upper_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=verbose);
     return TPolarimetricMap(x0.parameter_type, x)
 end
 

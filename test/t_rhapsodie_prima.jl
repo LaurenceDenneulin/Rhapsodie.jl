@@ -30,7 +30,7 @@ push!(header, ["contrast", "λ", "α", "Iu_disk_mse", "Ip_disk_mse", "theta_mse"
 
 # for k in range(-3, 0, step=0.5)
 regul_type = "joint"
-
+n_iter = 0
 for k in [-2.0]
     println("Starting contrast: 10e$(k)")
     mse_list = Vector{Vector{Any}}()
@@ -42,11 +42,11 @@ for k in [-2.0]
     Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
         function calculate_MSE_for_prima(X::Vector{Float64})
-            λ, α = X
+            λ, α, n_iter = X
             regularisation_parameters = 10 .^[0, -1., λ, -1., 0, -1.]
             regularisation_parameters[1] = 0
             regularisation_parameters[5] = 0
-
+            println("Iteration: ", n_iter, " | λ: ", λ, " α: ", α)
             diff_fits = EasyFITS.readfits("test_results/contrast_10e$(k)/Results_Separable_DoubleDifference.fits")
             diff_polar_map = Rhapsodie.TPolarimetricMap("mixed", diff_fits[ :, :, 1]', diff_fits[ :, :, 5]', diff_fits[:, :, 2]', diff_fits[:, :, 3]')
             X0 = diff_polar_map
@@ -59,8 +59,8 @@ for k in [-2.0]
             push!(mse_list, mse_entry)
             return sum(curr_mse[8:9])
         end
-
-        optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-1., -1.], rhobeg=4, rhoend=1e-1, maxfun=10)
+        n_iter += 1
+        optimal_hyperparams, info = PRIMA.newuoa(calculate_MSE_for_prima, [-1., -1., n_iter], rhobeg=4, rhoend=1e-1, maxfun=10)
         io = open("test_results/prima/contrast_10e$(k)/$(regul_type)_regul/mse.csv", "w")
         writedlm(io, header, ',')
         writedlm(io, mse_list, ',')
