@@ -50,20 +50,65 @@ end
 
 function MSE_object(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
     MSE = zeros(length(fieldnames(TPolarimetricMap)) - 1)
-    n_pixels = sum(get_MASK())
+    centers=size(x_est)[1:2]./2
+    mask=x_true.I_star .> 0
+    for ind in CartesianIndices(mask)
+        if (ind[1] - centers[1])^2 + (ind[2] - centers[2])^2 < 5^2
+            mask[ind]=0.
+        end           
+    end
+    # n_pixels = sum(get_MASK())
     for (i, attr) in enumerate(fieldnames(TPolarimetricMap))
         if i == 1 # Skipping field "parameter_type"
             continue
         end
         if i == 11 # Calculating circular MSE for theta field
-            MSE[i - 1] = rad2deg(vnorm2(angle.(exp.(im*2*(x_est.θ - x_true.θ))).*get_MASK()/2)/n_pixels)
+            # MSE[i - 1] = rad2deg(vnorm2(angle.(exp.(im*2*(x_est.θ - x_true.θ))).*get_MASK()/2)/n_pixels)
             continue
         end
-        MSE[i - 1] = vdot(getfield(x_est, attr) - getfield(x_true, attr), getfield(x_est, attr) - getfield(x_true, attr))
-        MSE[i - 1] /= vdot(getfield(x_true, attr), getfield(x_true, attr))
+        MSE[i - 1] = vdot((getfield(x_est, attr) - getfield(x_true, attr)).*mask, (getfield(x_est, attr) - getfield(x_true, attr)).*mask)
+        # MSE[i - 1] /= vdot(getfield(x_true, attr), getfield(x_true, attr))
     end
     return MSE
 end
+
+
+function absolute_error(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
+    abs_error = zeros(length(fieldnames(TPolarimetricMap)) - 1)
+    centers=size(x_est)[1:2]./2
+    mask=x_true.I_star .> 0
+    for ind in CartesianIndices(mask)
+        if (ind[1] - centers[1])^2 + (ind[2] - centers[2])^2 < 5^2
+            mask[ind]=0.
+        end           
+    end
+    for (i, attr) in enumerate(fieldnames(TPolarimetricMap))
+        if i == 1 # Skipping field "parameter_type"
+            continue
+        end
+        if i == 11 # Calculating circular MSE for theta field
+            # abs_error[i - 1] = rad2deg(vnorm2(angle.(exp.(im*2*(x_est.θ - x_true.θ))).*get_MASK()/2)/n_pixels)
+            continue
+        end
+        x_est_field=getfield(x_est, attr) .* mask
+        x_true_field=getfield(x_true, attr) .* mask
+        abs_error[i - 1] = sum(abs.(x_est_field[x_true_field .!= 0] - x_true_field[x_true_field .!= 0]))
+        #abs_error[i - 1] /= sum(abs.(true[true .!= 0]))
+    end
+    return abs_error
+end
+
+function SSIM(x_est::TPolarimetricMap, x_true::TPolarimetricMap)
+    ssim_values = zeros(length(fieldnames(TPolarimetricMap)) - 1)
+    for (i, attr) in enumerate(fieldnames(TPolarimetricMap))
+        if i == 1 # Skipping field "parameter_type"
+            continue
+        end
+        ssim_values[i - 1] = assess_ssim(getfield(x_est, attr), getfield(x_true, attr))
+    end
+    return ssim_values
+end
+
 
 function MSE_object(x_est::PolarimetricMap, x_true::PolarimetricMap)
     MSE = zeros(length(fieldnames(PolarimetricMap)) - 1)

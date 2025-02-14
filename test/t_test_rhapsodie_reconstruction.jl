@@ -45,16 +45,10 @@ for k in contrast_list
 
     PSF = readfits("data_for_demo/PSF_parametered_Airy.fits");
     A = set_fft_op(PSF[1:end÷2,:]'[:,:], psf_center[1:2]);
-    # X0 = TPolarimetricMap(parameter_type, randn(Rhapsodie.get_par().cols));
     X0 = diff_polar_map;
-    regularisation_parameters = 10 .^[0, -1., -2, -0.66, -3, -0.66] #(in log10) star, disk | Iu_star, Iu_star, Iu_disk, Iu_disk, Ip_disk, Ip_disk 
-    regularisation_parameters[1] = 0
-    # regularisation_parameters[3] = λ
-    x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=10^α,
-                        maxeval=1000, maxiter=max_iter);
+    regularisation_parameters = 10 .^[-8, -1., -2, -0.66, -3, -0.66] #(in log10) star, disk | Iu_star, Iu_star, Iu_disk, Iu_disk, Ip_disk, Ip_disk 
+    x = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, α=10^α, regul_type="disjoint", maxeval=1000, maxiter=max_iter, verbose=true);
     crop!(x)
     write_polar_map(x, "test_results/contrast_10e$(k)/rhapsodie_method_results/max_iter_$(max_iter)/RHAPSODIE_opti_params_$(parameter_type)_disjoint_regul_from_dd_on_$(regularisation_parameters[5]).fits", overwrite=true)
-    # append!(mse_list, Rhapsodie.MSE_object(x, true_polar_map))
     empty!(Rhapsodie.dataset)
 end
-# writedlm("test_results/mse_list.txt", mse_list)

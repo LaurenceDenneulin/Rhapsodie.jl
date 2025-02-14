@@ -42,7 +42,8 @@ module Rhapsodie
         NonLinear_Method,
         apply_rhapsodie,
         apply_edge_preserving_smoothing!,
-        MSE_object
+        MSE_object,
+        SSIM
 
     import Base: +, -, *, /, ==, getindex, setindex!, read, write, convert
 
@@ -62,6 +63,9 @@ module Rhapsodie
     using DelimitedFiles
     #using TiPi
     using Random
+    using ImageQualityIndexes
+    import ImageQualityIndexes: assess_ssim
+
 
     include("Polarimetric_Parameters.jl")
     include("tpolarimetric_parameters.jl")
