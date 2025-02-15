@@ -47,13 +47,13 @@ function calculate_ssim_for_prima(X::Vector{Float64})
     diff_fits = EasyFITS.readfits("test_results/contrast_10e$(k)/Results_Separable_DoubleDifference.fits")
     diff_polar_map = Rhapsodie.TPolarimetricMap("mixed", diff_fits[ :, :, 1]', diff_fits[ :, :, 5]', diff_fits[:, :, 2]', diff_fits[:, :, 3]')
     X0 = diff_polar_map
-    x_est = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, maxeval=500, maxiter=1000, α=α, regul_type=regul_type)
+    x_est = apply_rhapsodie(X0, A, Rhapsodie.dataset, regularisation_parameters, maxeval=500, maxiter=1000, α=10^α, regul_type=regul_type)
     true_polar_map = Rhapsodie.read_and_fill_polar_map("mixed", "$(root_path)TRUE.fits")
     crop!(x_est)
     write_polar_map(x_est, "test_results/prima/contrast_10e$(k)/$(regul_type)_regul/RHAPSODIE_$(λ)_$(α).fits", overwrite=true)
     curr_ssim = Rhapsodie.SSIM(x_est, true_polar_map)
     ssim_entry = [k, λ, α, curr_ssim[8], curr_ssim[9], curr_ssim[10]]
-    print("SSIM values: Iu_disk: ", curr_ssim[8], " | Iu_star ", curr_ssim[9])
+    println("SSIM values: Iu_disk: ", curr_ssim[8], " | Iu_star ", curr_ssim[9])
     push!(ssim_list, ssim_entry)
     return 1 - (sum(curr_ssim[8:9]) / 2)
 end
