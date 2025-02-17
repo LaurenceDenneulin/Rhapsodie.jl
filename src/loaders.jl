@@ -82,8 +82,8 @@ function push_to_trans_table(Id::AffineTransform2D{Float64}, epsilon::Vector{NTu
     n_frames = length(epsilon)
     if isnothing(derotang)
         for k=1:n_frames
-            A_left=translate( epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
-            A_right=translate( epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
+            A_left=translate(epsilon[k][1][1] + centerdiff[1], epsilon[k][1][2] + centerdiff[2], Id)
+            A_right=translate(epsilon[k][2][1] + centerdiff[1], epsilon[k][2][2] + centerdiff[2], Id)  
             push!(Trans_Table, (A_left, A_right))
         end
     else

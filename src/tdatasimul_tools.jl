@@ -83,9 +83,17 @@ function ddit_data_simulator(Good_Pix, A::Mapping, S::TPolarimetricMap; ro_noise
     M = generate_model(S, A);
     
     VAR = max.(M, zero(eltype(M))) .+ ro_noise^2
+	centers=[get_par().center, get_par().center - [get_par().epsilon[1][2][1], get_par().epsilon[1][2][2]] + [0, get_par().rows[2]/2]]
+    for ind in CartesianIndices(Good_Pix)
+        if (ind[1] - centers[1][1])^2 + (ind[2] - centers[1][2])^2 < 15^2
+            Good_Pix[ind]=0.
+        end
+		if (ind[1] - centers[2][1])^2 + (ind[2] - centers[2][2])^2 < 15^2
+            Good_Pix[ind]=0.
+        end
+    end
 	W = Good_Pix ./ VAR
 	D = data_generator(M, W)
-	
 	check_MSE(M, D, W);
     S = TPolarimetricMap("stokes", S.I_star, S.I_disk, S.Q, S.U)
 	CS = TPolarimetricMap("stokes", S.I_star, A*S.I_disk, A*S.Q, A*S.U)
