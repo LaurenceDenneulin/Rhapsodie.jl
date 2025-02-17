@@ -60,5 +60,5 @@ io = open("test_results/prima/contrast_10e$(k)/$(regul_type)_regul/ssim.csv", "w
 writedlm(io, header, ',')
 writedlm(io, ssim_list, ',')
 close(io)
-println("Optimal hyperparameters lambda, alpha: ", optimal_hyperparams[1], optimal_hyperparams[2])
+println("Optimal hyperparameters λ_1, λ_2, α: ", optimal_hyperparams[1], " | ", optimal_hyperparams[2], " | ", optimal_hyperparams[3])
 println("Info: ", info)
