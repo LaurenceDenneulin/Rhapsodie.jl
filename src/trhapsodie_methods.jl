@@ -122,7 +122,7 @@ function apply_gradient!(X::TPolarimetricMap, A::D, g::Array{T,3}, d::Array{Tdat
         if regul_type == "struct"
             tmp_grad = zeros(T, n1, n2, 2)
             f+=apply_tikhonov!(X.Iu_star[:,:], view(g,:,:,1), μ[1].λ / (2 * μ[1].ρ));
-            f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Ip_disk[:,:], dims=3), tmp_grad, μ[2].λ, μ[2].ρ; α=α)
+            f+=apply_edge_preserving_smoothing!(cat(X.Iu_disk[:,:], X.Ip_disk[:,:], dims=3), tmp_grad, μ[2].λ, μ[2].ρ; α=α^2)
             f+=apply_struct_regul!(X.Iu_disk, view(tmp_grad,:,:,1), μ[3].λ * α)
             f+=apply_struct_regul!(X.Ip_disk, view(tmp_grad,:,:,2), μ[3].λ)
             g[:,:,2] .+= tmp_grad[:,:,1]

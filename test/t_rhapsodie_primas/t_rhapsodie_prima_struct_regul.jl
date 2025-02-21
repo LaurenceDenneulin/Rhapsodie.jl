@@ -40,7 +40,7 @@ Rhapsodie.load_data("$(root_path)DATA.fits", "$(root_path)WEIGHT.fits")
 
 function calculate_ssim_for_prima(X::Vector{Float64})
     λ_1, λ_2, α = X
-    regularisation_parameters = 10 .^[-8, -1., λ_1, -1., λ_2, -1.]
+    regularisation_parameters = 10 .^[-8, -1., λ_1, λ_1 + 3, λ_2, -1.]
     println("Iteration : λ_1: ", λ_1, " | λ_2: ", λ_2, " | α: ", α)   
     diff_fits = EasyFITS.readfits("test_results/contrast_10e$(k)/Results_Separable_DoubleDifference.fits")
     diff_polar_map = Rhapsodie.TPolarimetricMap("mixed", diff_fits[ :, :, 1]', diff_fits[ :, :, 5]', diff_fits[:, :, 2]', diff_fits[:, :, 3]')
