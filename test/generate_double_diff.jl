@@ -46,16 +46,24 @@ Rhapsodie.load_parameters((DSIZE, 2*DSIZE, NTOT), Nframe, Nrot
     for i=1:Sdim
         T1=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Rhapsodie.Star_Disk_Table[i][2]))
         T2=TwoDimensionalTransformInterpolator(output_size, input_size, ker, ker, inv(Rhapsodie.Star_Disk_Table[i][4]))
-    
-        I1=T1*Rhapsodie.dataset[i].data[:,1:end÷2]
-        I2=T2*Rhapsodie.dataset[i].data[:,end÷2+1:end]
-        W1=T1*Rhapsodie.dataset[i].weights[:,1:end÷2]
-        W2=T2*Rhapsodie.dataset[i].weights[:,end÷2+1:end]
+
+        data = Rhapsodie.dataset[i].data
+        weights = Rhapsodie.dataset[i].weights 
+
+            for i=2:size(data)[1]-1
+                for j=2:size(data)[2]-1
+                    if weights[i,j] == 0.
+                        data[i,j] = (data[i-1, j] +data[i+1, j] +data[i, j-1] + data[i, j+1]) /
+                                ((data[i-1, j] !=0) + (data[i+1, j]!=0) + (data[i, j-1]!=0) + (data[i, j+1]!=0))
+                    end
+                end
+             end
+
+        I1=T1 * data[:,1:end÷2]
+        I2=T2 * data[:,1+end÷2:end]
 
         DATA[:,:,i,1]=I1;
         DATA[:,:,i,2]=I2;
-        WEIGHT[:,:,i,1]=W1;
-        WEIGHT[:,:,i,2]=W2;
     end
 #-----------------------------------------------------
 # Double Difference   

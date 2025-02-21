@@ -211,11 +211,11 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
         for j=1:n-1
             ndx=zero(T)
             for k=1:o
-                x1= (x[i,j,o] - x[i+1,j,o])/2
-                x2= (x[i,j,o] - x[i,j+1,o])/2
+                x1= (x[i,j,k] - x[i+1,j,k])/2
+                x2= (x[i,j,k] - x[i,j+1,k])/2
                 
                 nrm = x1^2 + x2^2;
-                (k==1) && (nrm *= α)
+                (k==1) && (nrm *= α) 
                 ndx += nrm
             end
             r =  ndx + μ^2;
@@ -223,16 +223,16 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
             f += λ*(√r -  μ);
             if r>0
                 for k=1:o
-                    x1= (x[i,j,o] - x[i+1,j,o])/2
-                    x2= (x[i,j,o] - x[i,j+1,o])/2
+                    x1= (x[i,j,k] - x[i+1,j,k])/2
+                    x2= (x[i,j,k] - x[i,j+1,k])/2
 
                     (k==1) && (x1 *= α)
                     (k==1) && (x2 *= α)
                     ## Gradient in x ##
                     ∂r=2*√r;
-                    g[i,j,o] += λ*(x1 + x2)/∂r;
-                    g[i+1,j,o] -= λ*x1/∂r; 
-                    g[i,j+1,o] -= λ*x2/∂r; 
+                    g[i,j,k] += λ*(x1 + x2)/∂r;
+                    g[i+1,j,k] -= λ*x1/∂r; 
+                    g[i,j+1,k] -= λ*x2/∂r; 
                     
                 end
             end
@@ -241,6 +241,7 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
     
     return f
 end
+
 
 function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
     g::AbstractArray{T,2},
