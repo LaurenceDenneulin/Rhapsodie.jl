@@ -27,7 +27,7 @@
 
 #------------------------------------------------
 
-
+#=
 function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::Array{data_table,1}) where {T <: AbstractFloat,N}
     MSE=0.0;
     n=0;
@@ -47,8 +47,8 @@ function MSE_data(x_est::Array{T,N}, x_true::Array{T,N}, d::data_table) where {T
         n= count(d.weights .>0);
     return MSE,n
 end
-
-function MSE_object(x_est::PolarimetricMap, x_true::PolarimetricMap)
+=#
+function mse_object(x_est::PolarimetricMap, x_true::PolarimetricMap)
     MSE = zeros(length(fieldnames(PolarimetricMap)) - 1)
     n_pixels = sum(get_MASK())
     for (i, attr) in enumerate(fieldnames(PolarimetricMap))
@@ -65,6 +65,16 @@ function MSE_object(x_est::PolarimetricMap, x_true::PolarimetricMap)
     return MSE
 end
 
+function mse_intensities(x_est::Array{T,N}, x_true::Array{T,N}) where {T <: AbstractFloat,N}
+    n=length(x_est)
+    res = x_est - x_true
+    return sum(res.*res)/n
+end
+
+
+#function optimisze_mse(x_true::PolarimetricMap
+
+#=
 function sure_crit(x::Array{T,N},
                    δx::Array{T,N}, 
                    d::Array{data_table,1}, 
@@ -146,3 +156,5 @@ function sure_optim(solver, x)#; linear=true)
         res=sure_tools.SURE(solver, x, grad_tools.dataset, data_perturbed, X0nl)[1]
     return res[1] + 2*res[2];
 end
+=#
+

@@ -40,29 +40,28 @@ where :
 
 """
 
-function apply_rhapsodie(x0::PolarimetricMap, A::D, d::Array{data_table,1}, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(0.,1e-8), gtol=(0.,1e-8), ftol=(0.,1e-8)) where {T <: AbstractFloat, D <:Mapping}
+function apply_rhapsodie(x0::PolarimetricMap, D::Dataset, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(0.,1e-8), gtol=(0.,1e-8), ftol=(0.,1e-8)) where {T <: AbstractFloat}
     #par =  
 
     n1,n2 = size(x0)
     X0 = convert(Array{T,3},x0);
     μ=[hyperparameters(par[1], par[3]); 
        hyperparameters(par[2], par[4])];
-       #[(HyperbolicEdgePreserving(10. ^par[3], (0.5,0.5)),10. ^par[1]);
-       #(HyperbolicEdgePreserving(10. ^par[4],(0.5,0.5,0.)),10. ^par[2])];
        
     lower_born=vcreate(X0);
-    vfill!(view(lower_born,:,:,1),0.0)
-    vfill!(view(lower_born,:,:,2:3),-Inf)
-   
+    if x0.parameter_type == "mixed"
+        display(x0.parameter_type)
+        fill!(view(lower_born,:,:,1),0.0)
+        fill!(view(lower_born,:,:,2:3),-Inf)
+    end
     g=vcreate(X0);
-    rhapsodie_fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), A, g, d, μ)
+    rhapsodie_fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), g, D, μ)
     x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return PolarimetricMap(x0.parameter_type,x)
 end
 
 
-
-function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_table,1}, μ::Array{hyperparameters{T},1}) where {T <: AbstractFloat, D <:Mapping}
+function apply_gradient!(X::PolarimetricMap, g::Array{T,3}, D::Dataset, μ::Array{hyperparameters{T},1}) where {T <: AbstractFloat}
 
     n1, n2, n3 = size(g)
     @assert (n1,n2) == size(X)
@@ -72,29 +71,20 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
                Only use 'stokes' or 'mixed' parameters.")
     end
     
-    Ay = cat(A*X.I[:,:], A*X.Q[:,:], A*X.U[:,:], dims=3)
+    x = cat(X.I[:,:], X.Q[:,:], X.U[:,:], dims=3)
     # Compute data fidelity term and gradient. (As gradient is initially set to
     # zero, we can recycle it between x and y.)
-    @assert size(g) == size(Ay)
-    vfill!(g, 0)
-    local f::Float64 = 0.0;
-    for k = 1:length(d)
-        f += fg!(Ay, g, d[k])
-    end
+    @assert size(g) == size(x)
+    fill!(g, 0)
+    f= chi_square!(x,g,D)
     
     # Convert gradient w.r.t. y into gradient w.r.t. x.  Nothing has to be done
     # for the 2nd and 3rd fields (Q and U) or if Ip = 0.
-    @assert size(g) == (n1,n2,3)
-    @inbounds for i3 in 1:3
-        g[:,:,i3].= A'*view(g,:,:,i3)[:,:];
-    end
-
+   
     if X.parameter_type == "mixed"
         @inbounds for i2 in 1:n2
             for i1 in 1:n1
                 if X.Ip[i1,i2] > 0
-                    #g[i1,i2,1] += (X.Q[i1,i2]*g[i1,i2,2] +
-                    #               X.U[i1,i2]*g[i1,i2,3])/X.Ip[i1,i2]
                     g[i1,i2,2] += X.Q[i1,i2]*g[i1,i2,1]/X.Ip[i1,i2]
                     g[i1,i2,3] += X.U[i1,i2]*g[i1,i2,1]/X.Ip[i1,i2]                  
                 end
@@ -104,11 +94,11 @@ function apply_gradient!(X::PolarimetricMap, A::D, g::Array{T,3}, d::Array{data_
      elseif X.parameter_type == "stokes"
  	    f+=apply_edge_preserving_smoothing!(X.I[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ)
      end
-    f+=apply_edge_preserving_smoothing!(cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), μ[2].λ, μ[2].ρ)
-    
+        f+=apply_edge_preserving_smoothing!(cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), μ[2].λ, μ[2].ρ)
 	return f
 end
    
+
 
 function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
                                    g::AbstractArray{T,2},
@@ -121,8 +111,8 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
     x1 = zero(T);
     x2 = zero(T);
         
-    for i=1:m-1
-        for j=1:n-1
+    for j=1:n-1
+        for i=1:m-1
             x1= (x[i,j] - x[i+1,j])/2
             x2= (x[i,j] - x[i,j+1])/2
             
@@ -140,7 +130,18 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,2},
              end
         end
     end
-    
+    x1=x[m,n]/2
+    x2=x[m,n]/2
+
+    ndx = x1^2 + x2^2;
+    r =  ndx + μ^2;
+    ## Cost functon ##
+    f += λ*(√r -  μ);
+    if r>0
+        ## Gradient in x ##
+        ∂r=2*√r;
+        g[m,n] += λ*(x1 + x2)/∂r;        
+     end
     return f
 end
 
@@ -157,8 +158,8 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
     xU1 = zero(T);
     xU2 = zero(T);
         
-    for i=1:m-1
-        for j=1:n-1
+    for j=1:n-1
+        for i=1:m-1
             xQ1= (x[i,j,1] - x[i+1,j,1])/2
             xQ2= (x[i,j,1] - x[i,j+1,1])/2
             xU1= (x[i,j,2] - x[i+1,j,2])/2
@@ -182,7 +183,24 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
              end
         end
     end
+    xQ1= (x[m,n,1])/2
+    xQ2= (x[m,n,1])/2
+    xU1= (x[m,n,2])/2
+    xU2= (x[m,n,2])/2
     
+    ndx = xQ1^2 + xQ2^2 + xU1^2 + xU2^2;
+    r =  ndx + μ^2;
+    ## Cost functon ##
+    f += λ*(√r -  μ);
+    if r>0
+        ## Gradient in x ##
+        ∂r=2*√r;
+        g[m,n,1] += λ*(xQ1 + xQ2)/∂r;        
+        g[m,n,2] += λ*(xU1 + xU2)/∂r;
+        
+     end
+    
+
     return f
 end
          

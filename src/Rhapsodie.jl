@@ -13,57 +13,21 @@
 module Rhapsodie
 
     export
-        PolarimetricPixel,
-        PolarimetricMap,
-        write,
-        read,
-        convert,
-        load_parameters,
-        get_par,
-        Load_Data,
-        fg!,
-        SetCropOperator,
-        crop,
-        crop!,
-        pad,
-        set_fft_op,
-        TwoDimensionalTransformInterpolator,
-        FieldTransformOperator,
-        data_simulator,
-        generate_model,
-        data_generator,
-        generate_parameters,
+        apply_rhapsodie,
+        apply_edge_preserving_smoothing!,
         Double_Difference,
         Double_Ratio,
         Linear_Method,
-        NonLinear_Method,
-        apply_rhapsodie,
-        apply_edge_preserving_smoothing!
-
-    import Base: +, -, *, /, ==, getindex, setindex!, read, write, convert
+        mse_intensities,
+        NonLinear_Method
 
     using OptimPackNextGen
-    import OptimPackNextGen: BraDi #va devenir BraDi avec un D majuscule
-    using SpecialFunctions
-    using TwoDimensional
-    using FFTW
-    using LinearInterpolators
-    using Statistics
-    using LinearAlgebra
-    using LazyAlgebra
-    import LazyAlgebra: Mapping, vcreate, vcopy, apply!
-    using StaticArrays
-    using FITSIO
-    using EasyFITS
+    using AstroFITS
     using DelimitedFiles
-    #using TiPi
-    using Random
+    using RhapsodieDirect
 
-    include("Polarimetric_Parameters.jl")
-    include("grad_tools.jl")
-    include("separable_methods.jl")
+    #include("separable_methods.jl") FIXME : PolarimetricPixels does not exist anymore
     include("rhapsodie_methods.jl")
-    include("datasimul_tools.jl")
     include("sure_tools.jl")
 end
 
