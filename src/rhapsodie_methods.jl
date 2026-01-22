@@ -30,11 +30,11 @@ struct hyperparameters{T<: AbstractFloat}
 end
 
 """
-    apply_rhapsodie('x0', 'A' , 'data', 'hyperparameters'; 'kwd')
+    apply_rhapsodie('x0', 'D', 'hyperparameters'; 'kwd')
 
 where : 
     - x0 is an initial reconstruction
-    - A is the operator of the convolution by the PSF
+    - 'D' is a Dataset structur from `RhapsodieDirect`
     - par is a set of hyper parameters given as follow : λ_I, λ_Q+U, ρ_I, ρ_Q+U
       where ρ is the ratio between the contribution λ and the threshold μ = λ/2ρ of the hypersmooth regularization;
 
@@ -49,7 +49,7 @@ function apply_rhapsodie(x0::PolarimetricMap, D::Dataset, par::Array{T,1}; mem=3
        hyperparameters(par[2], par[4])];
        
     lower_born=vcreate(X0);
-    if x0.parameter_type == "mixed"
+    if (x0.parameter_type == "mixed") || (x0.parameter_type == "stokes")  
         display(x0.parameter_type)
         fill!(view(lower_born,:,:,1),0.0)
         fill!(view(lower_born,:,:,2:3),-Inf)
