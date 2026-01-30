@@ -41,7 +41,6 @@ where :
 """
 
 function apply_rhapsodie(x0::PolarimetricMap, D::Dataset, par::Array{T,1}; mem=3, maxeval=50, maxiter=50, xtol=(0.,1e-8), gtol=(0.,1e-8), ftol=(0.,1e-8)) where {T <: AbstractFloat}
-    #par =  
 
     n1,n2 = size(x0)
     X0 = convert(Array{T,3},x0);
@@ -50,11 +49,9 @@ function apply_rhapsodie(x0::PolarimetricMap, D::Dataset, par::Array{T,1}; mem=3
        
     lower_born=vcreate(X0);
     if (x0.parameter_type == "mixed") || (x0.parameter_type == "stokes")  
-        display(x0.parameter_type)
         fill!(view(lower_born,:,:,1),0.0)
         fill!(view(lower_born,:,:,2:3),-Inf)
     end
-    g=vcreate(X0);
     rhapsodie_fg!(x,g)=apply_gradient!(PolarimetricMap(x0.parameter_type,x), g, D, μ)
     x = vmlmb(rhapsodie_fg!, X0, mem=mem, maxeval=maxeval, maxiter=maxiter, lower=lower_born, xtol=xtol,  gtol=gtol, ftol=ftol, verb=true);
     return PolarimetricMap(x0.parameter_type,x)
@@ -70,13 +67,13 @@ function apply_gradient!(X::PolarimetricMap, g::Array{T,3}, D::Dataset, μ::Arra
         error("Global reconstruction not implemented on Iu, Ip, and θ. 
                Only use 'stokes' or 'mixed' parameters.")
     end
-    
     x = cat(X.I[:,:], X.Q[:,:], X.U[:,:], dims=3)
     # Compute data fidelity term and gradient. (As gradient is initially set to
     # zero, we can recycle it between x and y.)
     @assert size(g) == size(x)
     fill!(g, 0)
-    f= chi_square!(x,g,D)
+    #f= chi_square!(x,g,D)
+    f= chi_square!(X,g,D)
     
     # Convert gradient w.r.t. y into gradient w.r.t. x.  Nothing has to be done
     # for the 2nd and 3rd fields (Q and U) or if Ip = 0.
@@ -90,11 +87,11 @@ function apply_gradient!(X::PolarimetricMap, g::Array{T,3}, D::Dataset, μ::Arra
                 end
             end
         end 
- 	    f+=apply_edge_preserving_smoothing!(X.Iu[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ);
+ 	    f+=apply_edge_preserving_smoothing!(X.Iu[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ)
      elseif X.parameter_type == "stokes"
  	    f+=apply_edge_preserving_smoothing!(X.I[:,:], view(g,:,:,1), μ[1].λ, μ[1].ρ)
      end
-        f+=apply_edge_preserving_smoothing!(cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), μ[2].λ, μ[2].ρ)
+     f+=apply_edge_preserving_smoothing!(cat(X.Q[:,:], X.U[:,:], dims=3), view(g,:,:,2:3), μ[2].λ, μ[2].ρ)
 	return f
 end
    
@@ -199,7 +196,6 @@ function apply_edge_preserving_smoothing!(x::AbstractArray{T,3},
         g[m,n,2] += λ*(xU1 + xU2)/∂r;
         
      end
-    
 
     return f
 end

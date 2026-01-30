@@ -25,8 +25,10 @@ module Rhapsodie
     using AstroFITS
     using DelimitedFiles
     using RhapsodieDirect
+    using Statistics
+    using StaticArrays
 
-    #include("separable_methods.jl") FIXME : PolarimetricPixels does not exist anymore
+    include("separable_methods.jl") #FIXME : PolarimetricPixels does not exist anymore
     include("rhapsodie_methods.jl")
     include("sure_tools.jl")
 end

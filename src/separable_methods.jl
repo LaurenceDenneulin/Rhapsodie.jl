@@ -28,21 +28,19 @@
 
 """
     Double_Difference(d,ind) -> X
-    Double_Difference(d) -> X #if indices loaded with 
     
 where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
-    - a PolarimetricPixel if d is of size (K,2).
 """
 function Double_Difference(data::Array{Float64,4},ind::Array{Int64,2})
         n1,n2,n3,n4= size(data);
-        S=Array{PolarimetricPixel}(undef,n1,n2);
+        S=Array{Float64}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1   
-                S[i1,i2]=Double_Difference(data[i1,i2,:,:], ind);
+                S[i1,i2,:]=Double_Difference(data[i1,i2,:,:], ind)
             end
         end
-        return PolarimetricMap(S)
+        return PolarimetricMap("stokes",S)
 end
 
 function Double_Difference(data::Array{Float64,2},ind::Array{Int64,2})
@@ -55,40 +53,28 @@ function Double_Difference(data::Array{Float64,2},ind::Array{Int64,2})
 		Iu=(data[ind[3,:],1] .+data[ind[3,:],2] 
 		    .+data[ind[4,:],1] .+data[ind[4,:],2])/2;
 
-        return PolarimetricPixel("stokes", 
-                                 (mean(Iq)+ mean(Iu))/2, 
-                                 Q,
-                                 U)
+        return [(mean(Iq)+ mean(Iu))/2, Q,U]
 end
-
-    Double_Difference(data::Array{Float64,4}) = (Double_Difference(data,
-                                                                   get_par().indices))
-
-    Double_Difference(data::Array{Float64,2}) = (Double_Difference(data,
-                                                                   get_par().indices))
 
 #
 #-----------------------------------------------------
 #
 """
-    Double_Ratio(d,ind) -> X
-    Double_Ratio(d) -> X #if indices loaded with 
-    
+    Double_Ratio(d,ind) -> X    
     
 where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
-    - a PolarimetricPixel if d is of size (K,2).
 
 """
 function Double_Ratio(data::Array{Float64,4},ind::Array{Int64,2})
         n1,n2,n3,n4= size(data);
-        S=Array{PolarimetricPixel}(undef,n1,n2);
+        S=Array{Float64}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1   
-                S[i1,i2]=Double_Ratio(data[i1,i2,:,:], ind);
+                S[i1,i2,:]=Double_Ratio(data[i1,i2,:,:], ind)
             end
         end
-        return PolarimetricMap(S)
+        return PolarimetricMap("stokes",S)
 end
 
 function Double_Ratio(data::Array{Float64,2},ind::Array{Int64,2})
@@ -103,17 +89,9 @@ function Double_Ratio(data::Array{Float64,2},ind::Array{Int64,2})
 		Iq=(data[ind[1,:],1] .+data[ind[1,:],2] .+data[ind[2,:],1] .+data[ind[2,:],2])/2;
 		Iu=(data[ind[3,:],1] .+data[ind[3,:],2] .+data[ind[4,:],1] .+data[ind[4,:],2])/2;
         
-        return PolarimetricPixel("stokes", 
-                                 (mean(Iq)+ mean(Iu))/2, 
-                                 mean(pq .*Iq),
-                                 mean(pu .*Iu))
+        return [(mean(Iq)+ mean(Iu))/2,mean(pq .*Iq),mean(pu .*Iu)]
 
 end
-
-
-Double_Ratio(data::Array{Float64,4}) = (Double_Ratio(data, get_par().indices))
-
-Double_Ratio(data::Array{Float64,2}) = (Double_Ratio(data, get_par().indices))
 
 #
 #-----------------------------------------------------
@@ -128,28 +106,26 @@ where X is:
     - a PolarimetricPixel if d is of size (K,2).
 
 """
-function Linear_Method(data::Array{Float64,4}, weight::Array{Float64,4})
+function Linear_Method(data::Array{Float64,4}, weight::Array{Float64,4},
+                        data_params::Vector{FieldTransformParameters})
         n1,n2,n3,n4= size(data);
-        x=Array{PolarimetricPixel}(undef,n1,n2);
+        S=Array{Float64}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1
-                if weight[i1,i2] !=0 
-                    x[i1,i2]=Linear_Method(data[i1,i2,:,:],weight[i1,i2,:,:]);
-                else
-                    x[i1,i2] = PolarimetricPixel("stokes",0.0, 0.0, 0.0);
-                end
+                S[i1,i2,:]=Linear_Method(data[i1,i2,:,:],weight[i1,i2,:,:],data_params)
             end
         end
-        return PolarimetricMap(x)
+        return PolarimetricMap("stokes",S)
 end
 
-function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2})
+function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2},
+                        data_params::Vector{FieldTransformParameters})
     T = Float64 # floating point type used for computations
 
     # Local variables to integrate the normal equations and other
     # quantities.  Only the lower triangular part of the left-hand-side
     # matrix is needed.
-    K = get_par().dataset_length # index range for 2nd dimension of `ind`
+    K = length(data_params) # index range for 2nd dimension of `ind`
     @assert size(data)[1] == K;
     @assert size(weight)[1] == K;
     
@@ -167,9 +143,15 @@ function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2})
         W = 0.0
         Wd = 0.0
         for k=1:K
-            v1 = get_par().v[k][j][1]
-            v2 = get_par().v[k][j][2]
-            v3 = get_par().v[k][j][3]
+            if j==1
+            v1 = data_params[k].polarization_left[1]
+            v2 = data_params[k].polarization_left[2]
+            v3 = data_params[k].polarization_left[3]
+            elseif j==2
+            v1 = data_params[k].polarization_right[1]
+            v2 = data_params[k].polarization_right[2]
+            v3 = data_params[k].polarization_right[3]            
+            end
             w, d = weight[k,j], data[k,j]
             W = w
             Wd = w*d
@@ -198,7 +180,7 @@ function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2})
     #CLRB=inv(A);
     x = A\b
     #x=CLRB*b;
-    return PolarimetricPixel("stokes", x)#, CLRB 
+    return x#, CLRB 
 end
 
 Linear_Method(data::Array{Float64,4}) = (Linear_Method(data, ones(size(data))))
@@ -209,7 +191,8 @@ Linear_Method(data::Array{Float64,2}) = (Linear_Method(data,ones(size(data))))
 #
 #-----------------------------------------------------
 #
-
+#TODO : fix non-linear method
+#=
 """
     NonLinear_Method(d,w) -> X
     NonLinear_Method(d) -> X #i.e. W=Id
@@ -220,31 +203,35 @@ where X is:
     - a PolarimetricPixel if d is of size (K,2).
 
 """
-
-function NonLinear_Method(data::Array{Float64,4}, weight::Array{Float64,4})
+function NonLinear_Method(data::Array{Float64,4}, weight::Array{Float64,4},
+                        data_params::Vector{FieldTransformParameters})
         n1,n2,n3,n4= size(data);
-        x=Array{PolarimetricPixel}(undef,n1,n2);
+        S=Array{Float64}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1   
                 if weight[i1,i2] !=0 
-                    x[i1,i2]=NonLinear_Method(data[i1,i2,:,:],weight[i1,i2,:,:]);
+                    x[i1,i2,:]=NonLinear_Method(data[i1,i2,:,:],weight[i1,i2,:,:],data_params);
                  else
-                    x[i1,i2] = PolarimetricPixel("intensities",0.0, 0.0, 0.0);
+                    x[i1,i2,:] .= 0.
                 end                   
             end
         end
         return PolarimetricMap(x)
 end
 
-function NonLinear_Method(data::A, weight::A) where {T<:AbstractFloat, A<:AbstractArray{T,2}}
-	cost(Θ)=opti_nonlinear(Θ,data,weight)[1]
+function NonLinear_Method(data::A, weight::A,
+                        data_params::Vector{FieldTransformParameters}) where {T<:AbstractFloat, A<:AbstractArray{T,2}}
+	cost(Θ)=opti_nonlinear(Θ,data,weight,
+                        data_params)[1]
 	(Θ_opt,c)=Bradi.minimize(cost,range(-pi/2,stop=pi/2,length=7))
-	f,x=opti_nonlinear(Θ_opt,data,weight)
+	f,x=opti_nonlinear(Θ_opt,data,weight,
+                        data_params)
 	return x
 end
 
 
-function opti_nonlinear(Θ::T,data::H, weight::H) where {T<:AbstractFloat, H<:AbstractArray{T,2}}
+function opti_nonlinear(Θ::T,data::H, weight::H,
+                        data_params::Vector{FieldTransformParameters}) where {T<:AbstractFloat, H<:AbstractArray{T,2}}
     K = get_par().dataset_length # index range for 2nd dimension of `ind`
     @assert size(data)[1] == K;
     @assert size(weight)[1] == K;
@@ -351,9 +338,7 @@ end
 NonLinear_Method(data::Array{Float64,4}) = (NonLinear_Method(data, ones(size(data))))
 
 NonLinear_Method(data::Array{Float64,2}) = (NonLinear_Method(data,ones(size(data))))
-
-
-
+=#
 #=
 function FDCR_nonlin(RHO,THETA,W,ind)
     (v,v_norm)=V_calc(alpha, psi)
