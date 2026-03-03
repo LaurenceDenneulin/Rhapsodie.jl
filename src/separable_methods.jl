@@ -32,9 +32,9 @@
 where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
 """
-function Double_Difference(data::Array{Float64,4},ind::Array{Int64,2})
+function Double_Difference(data::Array{T,4},ind::Array{T,2}) where {T<:AbstractFloat}
         n1,n2,n3,n4= size(data);
-        S=Array{Float64}(undef,n1,n2,3)
+        S=Array{T}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1   
                 S[i1,i2,:]=Double_Difference(data[i1,i2,:,:], ind)
@@ -43,7 +43,7 @@ function Double_Difference(data::Array{Float64,4},ind::Array{Int64,2})
         return PolarimetricMap("stokes",S)
 end
 
-function Double_Difference(data::Array{Float64,2},ind::Array{Int64,2})
+function Double_Difference(data::Array{T,2},ind::Array{I,2}) where{T<:AbstractFloat,I<:Int}
 		Q=mean((data[ind[1,:],1] .-data[ind[1,:],2] 
 		          .-(data[ind[2,:],1] .-data[ind[2,:],2]))/2);		
 		U=mean((data[ind[3,:],1] .-data[ind[3,:],2] 
@@ -66,9 +66,9 @@ where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
 
 """
-function Double_Ratio(data::Array{Float64,4},ind::Array{Int64,2})
+function Double_Ratio(data::Array{T,4},ind::Array{T,2}) where {T<:AbstractFloat}
         n1,n2,n3,n4= size(data);
-        S=Array{Float64}(undef,n1,n2,3)
+        S=Array{T}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1   
                 S[i1,i2,:]=Double_Ratio(data[i1,i2,:,:], ind)
@@ -77,7 +77,7 @@ function Double_Ratio(data::Array{Float64,4},ind::Array{Int64,2})
         return PolarimetricMap("stokes",S)
 end
 
-function Double_Ratio(data::Array{Float64,2},ind::Array{Int64,2})
+function Double_Ratio(data::Array{T,2},ind::Array{I,2}) where{T<:AbstractFloat,I<:Int}
 		Rq=(data[ind[1,:],1] ./data[ind[1,:],2]) ./(data[ind[2,:],1] ./data[ind[2,:],2]);
 		Ru=(data[ind[3,:],1] ./data[ind[3,:],2]) ./(data[ind[4,:],1] ./data[ind[4,:],2]);
 		for i=1:length(Rq)
@@ -106,10 +106,10 @@ where X is:
     - a PolarimetricPixel if d is of size (K,2).
 
 """
-function Linear_Method(data::Array{Float64,4}, weight::Array{Float64,4},
-                        data_params::Vector{FieldTransformParameters})
+function Linear_Method(data::Array{T,4}, weight::Array{T,4},
+                        data_params::Vector{FieldTransformParameters}) where {T <: AbstractFloat}
         n1,n2,n3,n4= size(data);
-        S=Array{Float64}(undef,n1,n2,3)
+        S=Array{T}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
             @simd for i1 in 1:n1
                 S[i1,i2,:]=Linear_Method(data[i1,i2,:,:],weight[i1,i2,:,:],data_params)
@@ -118,9 +118,8 @@ function Linear_Method(data::Array{Float64,4}, weight::Array{Float64,4},
         return PolarimetricMap("stokes",S)
 end
 
-function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2},
-                        data_params::Vector{FieldTransformParameters})
-    T = Float64 # floating point type used for computations
+function Linear_Method(data::Array{T,2}, weight::Array{T,2},
+                        data_params::Vector{FieldTransformParameters}) where {T <: AbstractFloat}
 
     # Local variables to integrate the normal equations and other
     # quantities.  Only the lower triangular part of the left-hand-side
@@ -183,9 +182,9 @@ function Linear_Method(data::Array{Float64,2}, weight::Array{Float64,2},
     return x#, CLRB 
 end
 
-Linear_Method(data::Array{Float64,4}) = (Linear_Method(data, ones(size(data))))
+Linear_Method(data::Array{T,4}) where {T <: AbstractFloat} = (Linear_Method(data, ones(size(data))))
 
-Linear_Method(data::Array{Float64,2}) = (Linear_Method(data,ones(size(data))))
+Linear_Method(data::Array{T,2}) where {T <: AbstractFloat} = (Linear_Method(data,ones(size(data))))
 
 
 #
