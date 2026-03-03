@@ -44,8 +44,8 @@ field_transforms=load_field_transforms(object_params,
                                        field_params)
 
 	
-psf_center=T.(readdlm("data/PSF_centers_Airy.txt"))
-psf=T.(readfits("data/PSF_parametered_Airy.fits"))
+psf_center=readdlm("data/PSF_centers_Airy.txt",T)
+psf=readfits(Array{T,2},"data/PSF_parametered_Airy.fits")
 blur=set_fft_operator(object_params,(psf[1:end÷2,:]'), psf_center[1:2]; pad_size=50)[1]
 
 
@@ -54,9 +54,15 @@ Sl=Linear_Method(data_cube,weights_cube,field_params)
 S0=PolarimetricMap(object_type, Sl.Iu, Sl.Q, Sl.U)
 write(S0, "test_results/init.fits")
 
+#S1=PolarimetricMap("intensities", blur'*(blur*Sl.Iu), blur'*(blur*Sl.Ip), Sl.θ )
+
+#H = LinearDirectModel(size(S0), (data_params.size...,data_params.frames_total),S0.parameter_type,field_transforms,blur)
+
+
+
 λ_Iu = T(4.)
 for λ_QU in collect(T,2.:4.)
-    for mu in collect(T,3.:6.)
+    for mu in collect(T,-3.:0)
 
         reg_par = 10 .^[λ_Iu, λ_QU, λ_Iu + 5, λ_QU + mu]
 
@@ -70,3 +76,4 @@ for λ_QU in collect(T,2.:4.)
 
     end
 end
+
