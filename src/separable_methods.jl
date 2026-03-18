@@ -32,7 +32,7 @@
 where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
 """
-function Double_Difference(data::Array{T,4},ind::Array{T,2}) where {T<:AbstractFloat}
+function Double_Difference(data::Array{T,4},ind::Array{I,2}) where {T<:AbstractFloat,I<:Int}}
         n1,n2,n3,n4= size(data);
         S=Array{T}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
@@ -66,7 +66,7 @@ where X is:
     - a PolarimetricMap if d is of size (N1,N2,K,2) 
 
 """
-function Double_Ratio(data::Array{T,4},ind::Array{T,2}) where {T<:AbstractFloat}
+function Double_Ratio(data::Array{T,4},ind::Array{I,2}) where {T<:AbstractFloat,I<:Int}
         n1,n2,n3,n4= size(data);
         S=Array{T}(undef,n1,n2,3)
         @inbounds for i2 in 1:n2
